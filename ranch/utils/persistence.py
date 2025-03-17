@@ -70,9 +70,10 @@ class RedisStorage:
         """
         serialized = pickle.dumps(value)
         if expiry:
-            self._redis.setex(self._make_key(key), expiry, serialized)
+            # Redis 5.x API requires the key, expiry, value order
+            self._redis.setex(name=self._make_key(key), time=expiry, value=serialized)
         else:
-            self._redis.set(self._make_key(key), serialized)
+            self._redis.set(name=self._make_key(key), value=serialized)
     
     def delete(self, key: str) -> None:
         """Delete a key."""
