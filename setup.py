@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="celery-lru-priority",
+    name="ranch",
     version="0.1.0",
     packages=find_packages(),
     install_requires=[
@@ -19,10 +19,10 @@ setup(
     },
     author="Claude",
     author_email="example@example.com",
-    description="A Celery extension providing LRU-based task prioritization",
+    description="Ranch: A Celery extension providing LRU-based task prioritization",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
-    url="https://github.com/username/celery-lru-priority",
+    url="https://github.com/username/ranch",
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",

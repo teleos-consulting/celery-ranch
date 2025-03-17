@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional, Tuple, List
 import threading
 
 from celery import Task
-from celery_lru_priority.utils.persistence import InMemoryStorage
+from ranch.utils.persistence import InMemoryStorage
 
 
 class TaskBacklog:

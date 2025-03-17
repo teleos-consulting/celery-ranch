@@ -1,11 +1,11 @@
-# Celery LRU Priority
+# Ranch
 
 A Python extension library for Celery that provides fair task scheduling using LRU (Least Recently Used) prioritization.
 
 ## Installation
 
 ```bash
-pip install celery-lru-priority
+pip install ranch
 ```
 
 ## Key Features
@@ -19,7 +19,7 @@ pip install celery-lru-priority
 
 ```python
 from celery import Celery
-from celery_lru_priority import lru_task
+from ranch import lru_task
 
 app = Celery('tasks')
 

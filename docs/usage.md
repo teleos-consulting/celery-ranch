@@ -1,15 +1,15 @@
-# Celery LRU Priority Usage Guide
+# Ranch Usage Guide
 
 ## Introduction
 
-Celery LRU Priority is a Python extension library for Celery that provides fair task scheduling using LRU (Least Recently Used) prioritization. It prevents high-volume clients from monopolizing task queues.
+Ranch is a Python extension library for Celery that provides fair task scheduling using LRU (Least Recently Used) prioritization. It prevents high-volume clients from monopolizing task queues.
 
 ## Installation
 
 Install the package using pip:
 
 ```bash
-pip install celery-lru-priority
+pip install ranch
 ```
 
 ## Basic Usage
@@ -20,7 +20,7 @@ Use the `lru_task` decorator instead of Celery's standard `@app.task` decorator:
 
 ```python
 from celery import Celery
-from celery_lru_priority import lru_task
+from ranch import lru_task
 
 app = Celery('tasks')
 
@@ -65,15 +65,15 @@ By default, the library uses in-memory storage for the task backlog and LRU trac
 ```python
 import redis
 from celery import Celery
-from celery_lru_priority import lru_task
-from celery_lru_priority.utils.persistence import RedisStorage
-from celery_lru_priority.utils.prioritize import configure
+from ranch import lru_task
+from ranch.utils.persistence import RedisStorage
+from ranch.utils.prioritize import configure
 
 app = Celery('tasks')
 
 # Configure with Redis storage
 redis_client = redis.from_url('redis://localhost:6379/0')
-redis_storage = RedisStorage(redis_client, prefix="my_app:lru_priority:")
+redis_storage = RedisStorage(redis_client, prefix="my_app:ranch:")
 configure(app=app, storage=redis_storage)
 
 @lru_task(app)
@@ -87,8 +87,8 @@ def process_data(data):
 You can customize the task base class:
 
 ```python
-from celery_lru_priority import lru_task
-from celery_lru_priority.task import LRUTask
+from ranch import lru_task
+from ranch.task import LRUTask
 
 class MyCustomTask(LRUTask):
     # Custom behavior
@@ -116,13 +116,13 @@ For optimal LRU scheduling:
 
 1. Dedicate workers to processing prioritization tasks:
    ```bash
-   celery -A myapp worker -Q celery_lru_priority -l info
+   celery -A myapp worker -Q ranch -l info
    ```
 
 2. Configure priority queue concurrency appropriately:
    ```python
    app.conf.task_routes = {
-       'celery_lru_priority.prioritize_task': {'queue': 'celery_lru_priority'}
+       'ranch.prioritize_task': {'queue': 'ranch'}
    }
    ```
 
@@ -131,7 +131,7 @@ For optimal LRU scheduling:
 Monitor the backlog size to ensure tasks aren't accumulating:
 
 ```python
-from celery_lru_priority.utils.prioritize import _task_backlog
+from ranch.utils.prioritize import _task_backlog
 
 # Get all LRU keys in the backlog
 lru_keys = _task_backlog.get_all_lru_keys()

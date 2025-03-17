@@ -2,7 +2,7 @@ from typing import Dict, Optional, List
 import time
 import threading
 
-from celery_lru_priority.utils.persistence import InMemoryStorage
+from ranch.utils.persistence import InMemoryStorage
 
 
 class LRUTracker:

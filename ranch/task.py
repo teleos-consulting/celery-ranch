@@ -3,9 +3,9 @@ from typing import Any, Callable, Optional, Type, TypeVar, cast, Union
 from celery import Celery, Task
 from celery.app.task import Task as CeleryTask
 
-from celery_lru_priority.utils.lru_tracker import LRUTracker
-from celery_lru_priority.utils.backlog import TaskBacklog
-from celery_lru_priority.utils.prioritize import prioritize_task, configure
+from ranch.utils.lru_tracker import LRUTracker
+from ranch.utils.backlog import TaskBacklog
+from ranch.utils.prioritize import prioritize_task, configure
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -29,7 +29,7 @@ class LRUTask(Task):
         Returns:
             The AsyncResult object for the task
         """
-        from celery_lru_priority.utils.prioritize import _task_backlog, _lru_tracker
+        from ranch.utils.prioritize import _task_backlog, _lru_tracker
         
         # Make sure the storage is initialized
         if _task_backlog is None or _lru_tracker is None:

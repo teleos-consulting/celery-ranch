@@ -1,5 +1,5 @@
 """
-Basic example showing how to use celery_lru_priority.
+Basic example showing how to use ranch.
 
 To run this example:
 1. Start a Redis server
@@ -12,7 +12,7 @@ To run this example:
 import time
 import random
 from celery import Celery
-from celery_lru_priority import lru_task
+from ranch import lru_task
 
 # Create a Celery application
 app = Celery('examples', broker='redis://localhost:6379/0', result_backend='redis://localhost:6379/0')

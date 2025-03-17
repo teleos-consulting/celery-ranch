@@ -5,9 +5,9 @@ import threading
 from celery import Task, shared_task, current_app
 from celery.result import AsyncResult
 
-from celery_lru_priority.utils.lru_tracker import LRUTracker
-from celery_lru_priority.utils.backlog import TaskBacklog
-from celery_lru_priority.utils.persistence import InMemoryStorage, RedisStorage
+from ranch.utils.lru_tracker import LRUTracker
+from ranch.utils.backlog import TaskBacklog
+from ranch.utils.persistence import InMemoryStorage, RedisStorage
 
 # Global lock for initialization
 _init_lock = threading.RLock()
@@ -44,7 +44,7 @@ def _initialize_storage():
         _task_backlog = TaskBacklog(storage=_storage)
 
 
-@shared_task(name="celery_lru_priority.prioritize_task", bind=True)
+@shared_task(name="ranch.prioritize_task", bind=True)
 def prioritize_task(self, task_id: str) -> Any:
     """Prioritization task that selects and executes the highest priority task.
     

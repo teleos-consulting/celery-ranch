@@ -39,7 +39,7 @@ class InMemoryStorage:
 class RedisStorage:
     """Redis-based storage implementation for production use."""
     
-    def __init__(self, redis_client, prefix: str = "celery_lru:") -> None:
+    def __init__(self, redis_client, prefix: str = "ranch:") -> None:
         """Initialize with a Redis client.
         
         Args:

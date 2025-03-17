@@ -5,10 +5,10 @@ import time
 from celery import Celery
 from celery.result import AsyncResult
 
-from celery_lru_priority import lru_task
-from celery_lru_priority.utils.lru_tracker import LRUTracker
-from celery_lru_priority.utils.backlog import TaskBacklog
-from celery_lru_priority.utils.prioritize import prioritize_task
+from ranch import lru_task
+from ranch.utils.lru_tracker import LRUTracker
+from ranch.utils.backlog import TaskBacklog
+from ranch.utils.prioritize import prioritize_task
 
 
 @pytest.fixture
@@ -34,7 +34,7 @@ def test_lru_task_decorator(celery_app):
     assert callable(test_task.lru_delay)
 
 
-@patch('celery_lru_priority.utils.prioritize.prioritize_task.delay')
+@patch('ranch.utils.prioritize.prioritize_task.delay')
 def test_lru_delay_method(mock_prioritize_delay, celery_app):
     """Test that lru_delay stores the task in the backlog and triggers prioritization."""
     
@@ -112,8 +112,8 @@ def test_task_backlog():
     assert not backlog.get_tasks_by_lru_key('client1')
 
 
-@patch('celery_lru_priority.utils.prioritize._task_backlog')
-@patch('celery_lru_priority.utils.prioritize._lru_tracker')
+@patch('ranch.utils.prioritize._task_backlog')
+@patch('ranch.utils.prioritize._lru_tracker')
 def test_prioritize_task(mock_lru_tracker, mock_task_backlog):
     """Test the prioritization task."""
     # Mock task backlog
