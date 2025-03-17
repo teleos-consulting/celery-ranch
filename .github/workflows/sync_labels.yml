@@ -1,0 +1,25 @@
+name: Sync Labels
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - '.github/labels.yml'
+  workflow_dispatch:
+
+jobs:
+  sync-labels:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+      
+      - name: Install github-label-sync
+        run: npm install -g github-label-sync
+      
+      - name: Sync labels
+        run: github-label-sync --access-token ${{ secrets.GITHUB_TOKEN }} --labels .github/labels.yml ${{ github.repository }}

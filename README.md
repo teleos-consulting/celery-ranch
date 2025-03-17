@@ -108,7 +108,21 @@ mypy .
 1. Update the README.md or documentation with details of changes if appropriate.
 2. Update the tests to reflect any changes to the functionality.
 3. The PR should work for Python 3.8, 3.9, and 3.10.
-4. PRs will be merged once they receive approval from maintainers.
+4. Select the appropriate version bump label, if any:
+   - `bump:patch`: Bug fixes and minor updates (0.1.0 → 0.1.1)
+   - `bump:minor`: New features (0.1.0 → 0.2.0) 
+   - `bump:major`: Breaking changes (0.1.0 → 1.0.0)
+5. PRs will be merged once they receive approval from maintainers.
+
+#### Automated Releases
+
+When a PR with a version bump label is merged to master:
+
+1. The version is automatically incremented in setup.py and __init__.py
+2. The updated package is automatically published to PyPI
+3. A new entry is created in the package's release history
+
+This automation ensures that new versions are released as soon as approved changes are merged.
 
 ### Code of Conduct
 
