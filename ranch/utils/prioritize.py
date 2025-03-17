@@ -233,6 +233,81 @@ def prioritize_task(self, task_id: str) -> Any:
         raise
 
 
+def _update_app_config(app, config: Dict[str, Any]) -> None:
+    """Update the Celery app configuration with Ranch settings.
+
+    Args:
+        app: Celery application instance
+        config: Configuration dictionary to update Celery app config
+    """
+    # Ensure ranch configuration exists
+    if not hasattr(app.conf, "ranch"):
+        app.conf.ranch = {}
+
+    # Update ranch configuration
+    for key, value in config.items():
+        app.conf.ranch[key] = value
+
+
+def _update_redis_config(app, config: Dict[str, Any]) -> None:
+    """Update Redis-specific configuration in the Celery app.
+
+    Args:
+        app: Celery application instance
+        config: Configuration dictionary containing Redis settings
+    """
+    # Set Redis configuration in app for later use
+    for key, value in config.items():
+        if key.startswith("redis_"):
+            if not hasattr(app.conf, "ranch"):
+                app.conf.ranch = {}
+            app.conf.ranch[key] = value
+
+
+def _setup_redis_storage(app) -> StorageBackend:
+    """Set up Redis storage from app configuration.
+
+    Args:
+        app: Celery application instance
+
+    Returns:
+        Configured storage backend (Redis or in-memory)
+    """
+    # Create and configure Redis client if applicable
+    redis_client = create_redis_client(app)
+
+    if not redis_client:
+        logger.info("Configured in-memory storage")
+        return InMemoryStorage()
+
+    # Get Redis configuration
+    ranch_config = getattr(app.conf, "ranch", {})
+    redis_prefix = ranch_config.get(
+        "redis_prefix", _DEFAULT_CONFIG["redis_prefix"]
+    )
+    redis_serializer = ranch_config.get(
+        "redis_serializer", _DEFAULT_CONFIG["redis_serializer"]
+    )
+    redis_max_retries = ranch_config.get(
+        "redis_max_retries", _DEFAULT_CONFIG["redis_max_retries"]
+    )
+    redis_key_ttl = ranch_config.get(
+        "redis_key_ttl", _DEFAULT_CONFIG["redis_key_ttl"]
+    )
+
+    # Create Redis storage
+    storage = RedisStorage(
+        redis_client=redis_client,
+        prefix=redis_prefix,
+        serializer=redis_serializer,
+        max_retries=redis_max_retries,
+        key_ttl=redis_key_ttl,
+    )
+
+    logger.info(f"Configured Redis storage with prefix {redis_prefix}")
+    return storage
+
+
 def configure(
     app=None,
     storage: Optional[StorageBackend] = None,
@@ -250,59 +325,17 @@ def configure(
     with _init_lock:
         # Configure Ranch settings in Celery app if provided
         if app is not None and config is not None:
-            # Ensure ranch configuration exists
-            if not hasattr(app.conf, "ranch"):
-                app.conf.ranch = {}
+            _update_app_config(app, config)
 
-            # Update ranch configuration
-            for key, value in config.items():
-                app.conf.ranch[key] = value
-
-        # Use provided storage or initialize from app
+        # Determine which storage to use
         if storage is not None:
             _storage = storage
         elif app is not None:
-            # Set Redis configuration in app for later use
+            # Update Redis config if provided
             if config is not None:
-                for key, value in config.items():
-                    if key.startswith("redis_"):
-                        if not hasattr(app.conf, "ranch"):
-                            app.conf.ranch = {}
-                        app.conf.ranch[key] = value
-
-            # Create and configure Redis client if applicable
-            redis_client = create_redis_client(app)
-
-            if redis_client:
-                # Get Redis configuration
-                ranch_config = getattr(app.conf, "ranch", {})
-                redis_prefix = ranch_config.get(
-                    "redis_prefix", _DEFAULT_CONFIG["redis_prefix"]
-                )
-                redis_serializer = ranch_config.get(
-                    "redis_serializer", _DEFAULT_CONFIG["redis_serializer"]
-                )
-                redis_max_retries = ranch_config.get(
-                    "redis_max_retries", _DEFAULT_CONFIG["redis_max_retries"]
-                )
-                redis_key_ttl = ranch_config.get(
-                    "redis_key_ttl", _DEFAULT_CONFIG["redis_key_ttl"]
-                )
-
-                # Create Redis storage
-                _storage = RedisStorage(
-                    redis_client=redis_client,
-                    prefix=redis_prefix,
-                    serializer=redis_serializer,
-                    max_retries=redis_max_retries,
-                    key_ttl=redis_key_ttl,
-                )
-
-                logger.info(f"Configured Redis storage with prefix {redis_prefix}")
-            else:
-                # Fall back to in-memory storage
-                _storage = InMemoryStorage()
-                logger.info("Configured in-memory storage")
+                _update_redis_config(app, config)
+            # Set up storage based on app configuration
+            _storage = _setup_redis_storage(app)
         else:
             _storage = InMemoryStorage()
             logger.info("Configured default in-memory storage")
