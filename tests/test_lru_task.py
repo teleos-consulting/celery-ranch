@@ -5,12 +5,12 @@ import pytest
 from celery import Celery
 from celery.result import AsyncResult
 
-from ranch import lru_task
-from ranch.task import LRUTask
-from ranch.utils.backlog import TaskBacklog
-from ranch.utils.lru_tracker import LRUTracker
-from ranch.utils.persistence import InMemoryStorage, retry_on_error, StorageBackend
-from ranch.utils.prioritize import prioritize_task, get_status
+from celery_ranch import lru_task
+from celery_ranch.task import LRUTask
+from celery_ranch.utils.backlog import TaskBacklog
+from celery_ranch.utils.lru_tracker import LRUTracker
+from celery_ranch.utils.persistence import InMemoryStorage, retry_on_error, StorageBackend
+from celery_ranch.utils.prioritize import prioritize_task, get_status
 
 
 @pytest.fixture
@@ -34,7 +34,7 @@ def test_lru_task_decorator(celery_app):
     assert callable(test_task.lru_delay)
 
 
-@patch("ranch.utils.prioritize.prioritize_task.delay")
+@patch("celery_ranch.utils.prioritize.prioritize_task.delay")
 def test_lru_delay_method(mock_prioritize_delay, celery_app):
     """Test that lru_delay stores the task in backlog and triggers prioritization."""
 
@@ -112,8 +112,8 @@ def test_task_backlog():
     assert not backlog.get_tasks_by_lru_key("client1")
 
 
-@patch("ranch.utils.prioritize._task_backlog")
-@patch("ranch.utils.prioritize._lru_tracker")
+@patch("celery_ranch.utils.prioritize._task_backlog")
+@patch("celery_ranch.utils.prioritize._lru_tracker")
 def test_prioritize_task(mock_lru_tracker, mock_task_backlog):
     """Test the prioritization task."""
     # Mock task backlog
@@ -167,7 +167,7 @@ def test_lru_task_basic_methods(celery_app):
     assert callable(test_task.lru_delay)
     
     # Test that lru_delay works
-    with patch("ranch.utils.prioritize.prioritize_task.delay") as mock_delay:
+    with patch("celery_ranch.utils.prioritize.prioritize_task.delay") as mock_delay:
         mock_result = MagicMock()
         mock_delay.return_value = mock_result
         
@@ -177,9 +177,9 @@ def test_lru_task_basic_methods(celery_app):
         assert result == mock_result
 
 
-@patch("ranch.utils.prioritize._lru_tracker")
-@patch("ranch.utils.prioritize._task_backlog")
-@patch("ranch.utils.prioritize._storage")
+@patch("celery_ranch.utils.prioritize._lru_tracker")
+@patch("celery_ranch.utils.prioritize._task_backlog")
+@patch("celery_ranch.utils.prioritize._storage")
 def test_get_status(mock_storage, mock_task_backlog, mock_lru_tracker):
     """Test the get_status function in prioritize module."""
     # Configure mocks

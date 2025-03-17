@@ -7,11 +7,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 from celery import Celery
 
-from ranch.utils.prioritize import (
+from celery_ranch.utils.prioritize import (
     _DEFAULT_CONFIG, _initialize_storage, configure, create_redis_client,
     get_status, prioritize_task
 )
-from ranch.utils.persistence import InMemoryStorage, RedisStorage, SerializerType
+from celery_ranch.utils.persistence import InMemoryStorage, RedisStorage, SerializerType
 
 
 @pytest.fixture
@@ -25,10 +25,10 @@ def celery_app():
     return app
 
 
-@patch("ranch.utils.prioritize.create_redis_client")
-@patch("ranch.utils.prioritize._lru_tracker", None)
-@patch("ranch.utils.prioritize._task_backlog", None)
-@patch("ranch.utils.prioritize._storage", None)
+@patch("celery_ranch.utils.prioritize.create_redis_client")
+@patch("celery_ranch.utils.prioritize._lru_tracker", None)
+@patch("celery_ranch.utils.prioritize._task_backlog", None)
+@patch("celery_ranch.utils.prioritize._storage", None)
 def test_initialize_storage_with_redis(mock_create_redis):
     """Test storage initialization with Redis."""
     # Mock Redis client creation
@@ -39,14 +39,14 @@ def test_initialize_storage_with_redis(mock_create_redis):
     _initialize_storage()
     
     # Verify that Redis storage was created
-    from ranch.utils.prioritize import _storage
+    from celery_ranch.utils.prioritize import _storage
     assert isinstance(_storage, RedisStorage)
 
 
-@patch("ranch.utils.prioritize.create_redis_client")
-@patch("ranch.utils.prioritize._lru_tracker", None)
-@patch("ranch.utils.prioritize._task_backlog", None)
-@patch("ranch.utils.prioritize._storage", None)
+@patch("celery_ranch.utils.prioritize.create_redis_client")
+@patch("celery_ranch.utils.prioritize._lru_tracker", None)
+@patch("celery_ranch.utils.prioritize._task_backlog", None)
+@patch("celery_ranch.utils.prioritize._storage", None)
 def test_initialize_storage_fallback(mock_create_redis):
     """Test storage initialization with fallback to InMemoryStorage."""
     # Mock Redis client creation failure
@@ -56,14 +56,14 @@ def test_initialize_storage_fallback(mock_create_redis):
     _initialize_storage()
     
     # Verify that InMemoryStorage was used as fallback
-    from ranch.utils.prioritize import _storage
+    from celery_ranch.utils.prioritize import _storage
     assert isinstance(_storage, InMemoryStorage)
 
 
-@patch("ranch.utils.prioritize.create_redis_client")
-@patch("ranch.utils.prioritize._lru_tracker", None)
-@patch("ranch.utils.prioritize._task_backlog", None)
-@patch("ranch.utils.prioritize._storage", None)
+@patch("celery_ranch.utils.prioritize.create_redis_client")
+@patch("celery_ranch.utils.prioritize._lru_tracker", None)
+@patch("celery_ranch.utils.prioritize._task_backlog", None)
+@patch("celery_ranch.utils.prioritize._storage", None)
 def test_initialize_storage_exception(mock_create_redis):
     """Test storage initialization with exception handling."""
     # Mock Redis client creation that raises an exception
@@ -73,7 +73,7 @@ def test_initialize_storage_exception(mock_create_redis):
     _initialize_storage()
     
     # Verify that InMemoryStorage was used as fallback due to exception
-    from ranch.utils.prioritize import _storage
+    from celery_ranch.utils.prioritize import _storage
     assert isinstance(_storage, InMemoryStorage)
 
 
@@ -135,7 +135,7 @@ def test_create_redis_client_import_error(mock_from_url, celery_app):
     # Mock missing redis module using patch dict
     with patch.dict('sys.modules', {'redis': None}):
         # This should cause an ImportError in the function
-        with patch('ranch.utils.prioritize.logger'):  # Suppress warning logs
+        with patch('celery_ranch.utils.prioritize.logger'):  # Suppress warning logs
             result = create_redis_client(celery_app)
             
             # Verify result
@@ -144,7 +144,7 @@ def test_create_redis_client_import_error(mock_from_url, celery_app):
             mock_from_url.assert_not_called()
 
 
-@patch("ranch.utils.prioritize.create_redis_client")
+@patch("celery_ranch.utils.prioritize.create_redis_client")
 def test_configure_with_custom_storage(mock_create_redis, celery_app):
     """Test configure with custom storage."""
     # Create custom storage
@@ -154,14 +154,14 @@ def test_configure_with_custom_storage(mock_create_redis, celery_app):
     configure(app=celery_app, storage=custom_storage)
     
     # Verify storage was set
-    from ranch.utils.prioritize import _storage
+    from celery_ranch.utils.prioritize import _storage
     assert _storage == custom_storage
     
     # Redis client should not be created
     mock_create_redis.assert_not_called()
 
 
-@patch("ranch.utils.prioritize.create_redis_client")
+@patch("celery_ranch.utils.prioritize.create_redis_client")
 def test_configure_with_redis(mock_create_redis, celery_app):
     """Test configure with Redis."""
     # Mock Redis client creation
@@ -175,11 +175,11 @@ def test_configure_with_redis(mock_create_redis, celery_app):
     mock_create_redis.assert_called_once_with(celery_app)
     
     # Verify storage type
-    from ranch.utils.prioritize import _storage
+    from celery_ranch.utils.prioritize import _storage
     assert isinstance(_storage, RedisStorage)
 
 
-@patch("ranch.utils.prioritize.create_redis_client")
+@patch("celery_ranch.utils.prioritize.create_redis_client")
 def test_configure_with_custom_config(mock_create_redis, celery_app):
     """Test configure with custom configuration."""
     # Mock Redis client creation
@@ -208,7 +208,7 @@ def test_configure_with_custom_config(mock_create_redis, celery_app):
     assert celery_app.conf.ranch.get("redis_key_ttl") == 3600
 
 
-@patch("ranch.utils.prioritize.create_redis_client")
+@patch("celery_ranch.utils.prioritize.create_redis_client")
 def test_configure_redis_not_available(mock_create_redis, celery_app):
     """Test configure when Redis is not available."""
     # Mock Redis client creation failure
@@ -221,12 +221,12 @@ def test_configure_redis_not_available(mock_create_redis, celery_app):
     mock_create_redis.assert_called_once_with(celery_app)
     
     # Verify fallback to InMemoryStorage
-    from ranch.utils.prioritize import _storage
+    from celery_ranch.utils.prioritize import _storage
     assert isinstance(_storage, InMemoryStorage)
 
 
-@patch("ranch.utils.prioritize._task_backlog")
-@patch("ranch.utils.prioritize._lru_tracker")
+@patch("celery_ranch.utils.prioritize._task_backlog")
+@patch("celery_ranch.utils.prioritize._lru_tracker")
 def test_prioritize_task_success(mock_lru_tracker, mock_task_backlog):
     """Test successful task prioritization."""
     # Setup mocks
@@ -263,7 +263,7 @@ def test_prioritize_task_success(mock_lru_tracker, mock_task_backlog):
     )
 
 
-@patch("ranch.utils.prioritize._task_backlog")
+@patch("celery_ranch.utils.prioritize._task_backlog")
 def test_prioritize_task_no_keys(mock_task_backlog):
     """Test prioritize_task with no LRU keys."""
     # Setup mocks
@@ -276,8 +276,8 @@ def test_prioritize_task_no_keys(mock_task_backlog):
     assert result is None
 
 
-@patch("ranch.utils.prioritize._task_backlog")
-@patch("ranch.utils.prioritize._lru_tracker")
+@patch("celery_ranch.utils.prioritize._task_backlog")
+@patch("celery_ranch.utils.prioritize._lru_tracker")
 def test_prioritize_task_no_oldest_key(mock_lru_tracker, mock_task_backlog):
     """Test prioritize_task with no oldest key."""
     # Setup mocks
@@ -291,8 +291,8 @@ def test_prioritize_task_no_oldest_key(mock_lru_tracker, mock_task_backlog):
     assert result is None
 
 
-@patch("ranch.utils.prioritize._task_backlog")
-@patch("ranch.utils.prioritize._lru_tracker")
+@patch("celery_ranch.utils.prioritize._task_backlog")
+@patch("celery_ranch.utils.prioritize._lru_tracker")
 def test_prioritize_task_no_tasks_for_key(mock_lru_tracker, mock_task_backlog):
     """Test prioritize_task with no tasks for the selected key."""
     # Setup mocks
@@ -307,8 +307,8 @@ def test_prioritize_task_no_tasks_for_key(mock_lru_tracker, mock_task_backlog):
     assert result is None
 
 
-@patch("ranch.utils.prioritize._task_backlog")
-@patch("ranch.utils.prioritize._lru_tracker")
+@patch("celery_ranch.utils.prioritize._task_backlog")
+@patch("celery_ranch.utils.prioritize._lru_tracker")
 def test_prioritize_task_missing_task_data(mock_lru_tracker, mock_task_backlog):
     """Test prioritize_task when task data is missing."""
     # Setup mocks
@@ -331,9 +331,9 @@ def test_prioritize_task_missing_task_data(mock_lru_tracker, mock_task_backlog):
     assert result is None
 
 
-@patch("ranch.utils.prioritize.prioritize_task.delay")
-@patch("ranch.utils.prioritize._task_backlog")
-@patch("ranch.utils.prioritize._lru_tracker") 
+@patch("celery_ranch.utils.prioritize.prioritize_task.delay")
+@patch("celery_ranch.utils.prioritize._task_backlog")
+@patch("celery_ranch.utils.prioritize._lru_tracker") 
 def test_prioritize_task_exception_handling(mock_lru_tracker, mock_task_backlog, mock_delay):
     """Test prioritize_task exception handling."""
     # Setup mocks
@@ -346,7 +346,7 @@ def test_prioritize_task_exception_handling(mock_lru_tracker, mock_task_backlog,
     )
     
     # Suppress logs
-    with patch("ranch.utils.prioritize.logger"):
+    with patch("celery_ranch.utils.prioritize.logger"):
         # Mock sleep to speed up test
         with patch("time.sleep") as mock_sleep:
             try:
@@ -360,9 +360,9 @@ def test_prioritize_task_exception_handling(mock_lru_tracker, mock_task_backlog,
                 mock_sleep.assert_called_once()
 
 
-@patch("ranch.utils.prioritize._storage")
-@patch("ranch.utils.prioritize._task_backlog")
-@patch("ranch.utils.prioritize._lru_tracker")
+@patch("celery_ranch.utils.prioritize._storage")
+@patch("celery_ranch.utils.prioritize._task_backlog")
+@patch("celery_ranch.utils.prioritize._lru_tracker")
 def test_get_status(mock_lru_tracker, mock_task_backlog, mock_storage):
     """Test get_status function."""
     # Setup mocks
@@ -376,7 +376,7 @@ def test_get_status(mock_lru_tracker, mock_task_backlog, mock_storage):
     mock_redis_storage.__class__.__name__ = "RedisStorage"
     
     # Apply patch
-    with patch("ranch.utils.prioritize._storage", mock_redis_storage):
+    with patch("celery_ranch.utils.prioritize._storage", mock_redis_storage):
         # Call get_status
         result = get_status()
         
@@ -388,7 +388,7 @@ def test_get_status(mock_lru_tracker, mock_task_backlog, mock_storage):
         assert result["health"] is True
     
     # Test InMemoryStorage
-    with patch("ranch.utils.prioritize._storage", MagicMock(spec=InMemoryStorage)):
+    with patch("celery_ranch.utils.prioritize._storage", MagicMock(spec=InMemoryStorage)):
         # Call get_status
         result = get_status()
         
@@ -396,7 +396,7 @@ def test_get_status(mock_lru_tracker, mock_task_backlog, mock_storage):
         assert result["health"] is True  # InMemoryStorage is always healthy
     
     # Test not initialized
-    with patch("ranch.utils.prioritize._storage", None):
+    with patch("celery_ranch.utils.prioritize._storage", None):
         # Call get_status
         result = get_status()
         
@@ -405,8 +405,8 @@ def test_get_status(mock_lru_tracker, mock_task_backlog, mock_storage):
         assert result["storage_type"] == "none"
 
 
-@patch("ranch.utils.prioritize._task_backlog")
-@patch("ranch.utils.prioritize._storage")
+@patch("celery_ranch.utils.prioritize._task_backlog")
+@patch("celery_ranch.utils.prioritize._storage")
 def test_get_status_exception_handling(mock_storage, mock_task_backlog):
     """Test get_status with exception handling."""
     # Setup mocks to raise exception

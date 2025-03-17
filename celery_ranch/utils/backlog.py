@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from celery import Task
 
-from ranch.utils.persistence import InMemoryStorage, StorageBackend
+from celery_ranch.utils.persistence import InMemoryStorage, StorageBackend
 
 logger = logging.getLogger(__name__)
 
@@ -203,7 +203,7 @@ class TaskBacklog:
         Returns:
             Dictionary with backlog statistics
         """
-        stats = {
+        stats: Dict[str, Any] = {
             "total_tasks": 0,
             "total_clients": 0,
             "clients": {},
@@ -220,10 +220,12 @@ class TaskBacklog:
                 # Get tasks for this key
                 tasks = self.get_tasks_by_lru_key(lru_key)
                 task_count = len(tasks)
-                stats["total_tasks"] += task_count
+                if isinstance(stats["total_tasks"], int):
+                    stats["total_tasks"] += task_count
 
                 # Add client info
-                stats["clients"][lru_key] = {"task_count": task_count}
+                if isinstance(stats["clients"], dict):
+                    stats["clients"][lru_key] = {"task_count": task_count}
 
             # Get expired tasks count by checking metadata
             now = time.time()
@@ -232,10 +234,13 @@ class TaskBacklog:
                 metadata = self._storage.get(meta_key)
                 if (
                     metadata
-                    and metadata.get("expires_at")
+                    and isinstance(metadata, dict)
+                    and "expires_at" in metadata
+                    and metadata["expires_at"] is not None
                     and now > metadata["expires_at"]
                 ):
-                    stats["expired_tasks"] += 1
+                    if isinstance(stats["expired_tasks"], int):
+                        stats["expired_tasks"] += 1
 
         return stats
 

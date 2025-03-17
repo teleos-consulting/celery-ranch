@@ -4,7 +4,7 @@ import time
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
-from ranch.utils.persistence import InMemoryStorage, StorageBackend
+from celery_ranch.utils.persistence import InMemoryStorage, StorageBackend
 
 logger = logging.getLogger(__name__)
 

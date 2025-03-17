@@ -5,8 +5,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from ranch.utils.backlog import TaskBacklog
-from ranch.utils.persistence import InMemoryStorage
+from celery_ranch.utils.backlog import TaskBacklog
+from celery_ranch.utils.persistence import InMemoryStorage
 
 
 def test_task_backlog_init():

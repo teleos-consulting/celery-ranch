@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from ranch.utils.persistence import (InMemoryStorage, StorageBackend, 
+from celery_ranch.utils.persistence import (InMemoryStorage, StorageBackend, 
                                     RedisStorage, SerializerType, retry_on_error)
 
 
