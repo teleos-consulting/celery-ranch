@@ -2,7 +2,7 @@ from typing import Any, Callable, TypeVar, cast
 
 from celery import Celery, Task
 
-from ranch.utils.prioritize import prioritize_task, configure
+from ranch.utils.prioritize import configure, prioritize_task
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -26,7 +26,7 @@ class LRUTask(Task):
         Returns:
             The AsyncResult object for the task
         """
-        from ranch.utils.prioritize import _task_backlog, _lru_tracker
+        from ranch.utils.prioritize import _lru_tracker, _task_backlog
 
         # Make sure the storage is initialized
         if _task_backlog is None or _lru_tracker is None:

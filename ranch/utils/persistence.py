@@ -3,7 +3,7 @@ Persistent storage implementations for task backlog and LRU tracking.
 """
 
 import pickle
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, List, Optional
 
 
 class InMemoryStorage:

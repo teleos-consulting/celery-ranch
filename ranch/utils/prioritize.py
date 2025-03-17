@@ -1,10 +1,10 @@
-from typing import Any
 import threading
+from typing import Any
 
-from celery import shared_task, current_app
+from celery import current_app, shared_task
 
-from ranch.utils.lru_tracker import LRUTracker
 from ranch.utils.backlog import TaskBacklog
+from ranch.utils.lru_tracker import LRUTracker
 from ranch.utils.persistence import InMemoryStorage, RedisStorage
 
 # Global lock for initialization

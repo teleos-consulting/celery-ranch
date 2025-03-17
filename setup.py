@@ -17,6 +17,8 @@ setup(
             "mypy>=1.7.0",
             "pylint>=3.0.2",
             "redis>=5.0.1",
+            "types-redis",
+            "types-setuptools",
         ],
         "redis": [
             "redis>=5.0.1",
