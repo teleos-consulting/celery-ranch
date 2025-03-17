@@ -70,6 +70,10 @@ The library works by:
    pip install -e ".[dev]"
    ```
 
+### Publishing to PyPI
+
+See [PyPI Publishing Guide](docs/pypi_publishing.md) for detailed instructions on how to publish the package to PyPI.
+
 ### Running Tests
 
 The project uses pytest for testing:
@@ -136,6 +140,12 @@ This automation ensures that new versions are released as soon as approved chang
 - Be respectful and inclusive in your communications.
 - Focus on constructive feedback and collaboration.
 - Help create a positive and supportive environment for all contributors.
+
+## Supporting Ranch
+
+If you find Ranch useful in your projects, please consider supporting its development! See our [Sponsorship Guide](docs/sponsorship.md) for more information on how you can contribute.
+
+[![Sponsor on GitHub](https://img.shields.io/badge/sponsor-on%20github-blue?logo=github&style=flat-square)](https://github.com/sponsors/teleos-consulting)
 
 ## License
 
