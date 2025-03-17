@@ -2,7 +2,6 @@
 
 [![Ranch CI](https://github.com/teleos-consulting/celery-ranch/actions/workflows/ci.yml/badge.svg)](https://github.com/teleos-consulting/celery-ranch/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/teleos-consulting/celery-ranch/graph/badge.svg?token=GNXKAEISFB)](https://codecov.io/gh/teleos-consulting/celery-ranch)
-[![PyPI version](https://badge.fury.io/py/ranch.svg)](https://badge.fury.io/py/ranch)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/release/python-380/)
 [![Celery 5.3.4+](https://img.shields.io/badge/celery-5.3.4+-green.svg)](https://docs.celeryproject.org/)
 
