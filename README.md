@@ -4,6 +4,7 @@
 [![codecov](https://codecov.io/gh/teleos-consulting/celery-ranch/branch/master/graph/badge.svg)](https://codecov.io/gh/teleos-consulting/celery-ranch)
 [![PyPI version](https://badge.fury.io/py/ranch.svg)](https://badge.fury.io/py/ranch)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/release/python-380/)
+[![Celery 5.3.4+](https://img.shields.io/badge/celery-5.3.4+-green.svg)](https://docs.celeryproject.org/)
 
 A Python extension library for Celery that provides fair task scheduling using LRU (Least Recently Used) prioritization.
 
@@ -11,6 +12,12 @@ A Python extension library for Celery that provides fair task scheduling using L
 
 ```bash
 pip install ranch
+```
+
+For production use with Redis storage:
+
+```bash
+pip install ranch[redis]
 ```
 
 ## Key Features

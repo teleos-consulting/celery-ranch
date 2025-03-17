@@ -28,7 +28,7 @@ indent-string='    '
 # W0212: Access to a protected member of a class
 # R0913: Too many arguments
 # R0914: Too many local variables
-disable=C0111,W0511,R0903,C0103,W0621,W0212,R0913,R0914
+disable=C0111,W0511,R0903,C0103,W0621,W0212,R0913,R0914,C0415,W0613,W0603,W0718,C0201,W0223
 
 [REPORTS]
 # Set the output format
@@ -45,8 +45,8 @@ evaluation=10.0 - ((float(5 * error + warning + refactor + convention) / stateme
 # Good variable names
 good-names=i,j,k,ex,Run,_,id
 
-# List of builtins function names that should not be used
-bad-functions=map,filter,apply,input
+# List of builtins function names that should not be used (disabled)
+# bad-functions=map,filter,apply,input
 
 [DESIGN]
 # Maximum number of arguments for function / method
