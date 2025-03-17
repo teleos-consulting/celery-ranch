@@ -1,5 +1,5 @@
 """
-Basic example showing how to use ranch.
+Basic example showing how to use celery-ranch.
 
 To run this example:
 1. Start a Redis server
@@ -14,7 +14,7 @@ import time
 
 from celery import Celery
 
-from ranch import lru_task
+from celery_ranch import lru_task
 
 # Create a Celery application
 app = Celery(

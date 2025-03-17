@@ -20,9 +20,9 @@ Basic usage:
     result = process_data.lru_delay("client_id", data_to_process)
 """
 
-from ranch.task import lru_task
-from ranch.utils.persistence import SerializerType
-from ranch.utils.prioritize import get_status
+from celery_ranch.task import lru_task
+from celery_ranch.utils.persistence import SerializerType
+from celery_ranch.utils.prioritize import get_status
 
 __version__ = "0.1.1"
 __all__ = ["lru_task", "SerializerType", "get_status"]

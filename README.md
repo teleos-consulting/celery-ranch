@@ -1,8 +1,8 @@
-# Ranch
+# Celery Ranch
 
-[![Ranch CI](https://github.com/teleos-consulting/celery-ranch/actions/workflows/ci.yml/badge.svg)](https://github.com/teleos-consulting/celery-ranch/actions/workflows/ci.yml)
+[![Celery Ranch CI](https://github.com/teleos-consulting/celery-ranch/actions/workflows/ci.yml/badge.svg)](https://github.com/teleos-consulting/celery-ranch/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/teleos-consulting/celery-ranch/branch/master/graph/badge.svg)](https://codecov.io/gh/teleos-consulting/celery-ranch)
-[![PyPI version](https://badge.fury.io/py/ranch.svg)](https://badge.fury.io/py/ranch)
+[![PyPI version](https://badge.fury.io/py/celery-ranch.svg)](https://badge.fury.io/py/celery-ranch)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/release/python-380/)
 [![Celery 5.3.4+](https://img.shields.io/badge/celery-5.3.4+-green.svg)](https://docs.celeryproject.org/)
 
@@ -11,13 +11,13 @@ A Python extension library for Celery that provides fair task scheduling using L
 ## Installation
 
 ```bash
-pip install ranch
+pip install celery-ranch
 ```
 
 For production use with Redis storage:
 
 ```bash
-pip install ranch[redis]
+pip install celery-ranch[redis]
 ```
 
 ## Key Features
@@ -36,7 +36,7 @@ pip install ranch[redis]
 
 ```python
 from celery import Celery
-from ranch import lru_task
+from celery_ranch import lru_task
 
 app = Celery('tasks')
 
@@ -130,10 +130,10 @@ The project uses pytest for testing:
 pytest
 
 # Run tests with coverage
-pytest --cov=ranch
+pytest --cov=celery_ranch
 
 # Generate HTML coverage report
-pytest --cov=ranch --cov-report=html
+pytest --cov=celery_ranch --cov-report=html
 ```
 
 ### Code Quality
@@ -142,8 +142,8 @@ We use several tools to ensure code quality:
 
 ```bash
 # Run linters
-flake8 ranch
-pylint ranch
+flake8 celery_ranch
+pylint celery_ranch
 
 # Format code
 black .
@@ -188,9 +188,9 @@ This automation ensures that new versions are released as soon as approved chang
 - Focus on constructive feedback and collaboration.
 - Help create a positive and supportive environment for all contributors.
 
-## Supporting Ranch
+## Supporting Celery Ranch
 
-If you find Ranch useful in your projects, please consider supporting its development! See our [Sponsorship Guide](docs/sponsorship.md) for more information on how you can contribute.
+If you find Celery Ranch useful in your projects, please consider supporting its development! See our [Sponsorship Guide](docs/sponsorship.md) for more information on how you can contribute.
 
 [![Sponsor on GitHub](https://img.shields.io/badge/sponsor-on%20github-blue?logo=github&style=flat-square)](https://github.com/sponsors/teleos-consulting)
 

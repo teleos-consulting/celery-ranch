@@ -1,4 +1,4 @@
-# Ranch Development Standards and Guidelines
+# Celery Ranch Development Standards and Guidelines
 
 ## Local Development Workflow
 
@@ -12,13 +12,13 @@ To minimize GitHub Actions time consumption and avoid failed CI builds, follow t
 2. Run type checking and linting focused on the main package:
    ```bash
    mypy .
-   flake8 ranch
-   pylint ranch
+   flake8 celery_ranch
+   pylint celery_ranch
    ```
 
 3. Run tests with coverage to ensure the required 80% threshold is met:
    ```bash
-   pytest --cov=ranch --cov-report=term-missing
+   pytest --cov=celery_ranch --cov-report=term-missing
    ```
 
 4. If tests fail, troubleshoot by running specific test files with detailed output:
@@ -32,11 +32,11 @@ To minimize GitHub Actions time consumption and avoid failed CI builds, follow t
    pytest
 
    # Check coverage meets requirements (80% or higher)
-   pytest --cov=ranch --cov-report=term-missing
+   pytest --cov=celery_ranch --cov-report=term-missing
 
    # Run linting on main package code
-   flake8 ranch
-   pylint ranch
+   flake8 celery_ranch
+   pylint celery_ranch
    
    # Verify type checking
    mypy .
@@ -61,20 +61,20 @@ pip install -e ".[dev]"
 pytest                                # Run all tests
 pytest -xvs                           # Verbose test output
 pytest tests/test_file.py -xvs        # Run one test file with verbose output
-pytest --cov=ranch                    # Run tests with coverage for ranch package
-pytest --cov=ranch --cov-report=term-missing  # Coverage with report of missing lines
-pytest --cov=ranch --cov-report=html  # Generate HTML coverage report
+pytest --cov=celery_ranch                    # Run tests with coverage for celery_ranch package
+pytest --cov=celery_ranch --cov-report=term-missing  # Coverage with report of missing lines
+pytest --cov=celery_ranch --cov-report=html  # Generate HTML coverage report
 pytest tests/integration/             # Run only integration tests
 pytest tests/test_lru_task.py         # Run specific test module
 pytest -k "test_name_pattern"         # Run tests matching a pattern
 
 # Linting and formatting
-flake8 ranch               # Run flake8 linter on main package only (faster)
+flake8 celery_ranch               # Run flake8 linter on main package only (faster)
 flake8                     # Run flake8 on whole project
-pylint ranch               # Run pylint on package only (more focused results)
-black ranch                # Format main package code
+pylint celery_ranch               # Run pylint on package only (more focused results)
+black celery_ranch                # Format main package code
 black .                    # Format all code
-isort ranch                # Sort imports in main package
+isort celery_ranch                # Sort imports in main package
 isort .                    # Sort imports in all files
 pre-commit run --all-files # Run all pre-commit hooks
 
@@ -160,13 +160,13 @@ twine check dist/*         # Verify package quality
 - Configure worker concurrency based on CPU/memory constraints
 - Optimize serialization method based on payload size
 - Use result backends wisely - only when results needed
-- Implement task priority using Ranch LRU prioritization
+- Implement task priority using Celery Ranch LRU prioritization
 - Consider using the `--time-limit` and `--soft-time-limit` worker options
 - Monitor worker memory usage to prevent OOM issues
 - Use `prefetch_multiplier` to control message prefetching
 - Consider Redis cluster for high-volume deployments
 
-## Ranch-Specific Guidelines
+## Celery Ranch-Specific Guidelines
 
 - Always use `lru_task` decorator for tasks requiring fair scheduling
 - Provide meaningful client IDs in `lru_delay()` calls

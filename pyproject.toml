@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ranch"
+name = "celery-ranch"
 version = "0.1.0"
-description = "Ranch: A Celery extension providing LRU-based task prioritization"
+description = "Celery Ranch: A Celery extension providing LRU-based task prioritization"
 readme = "README.md"
 authors = [
     {name = "Matthew DesEnfants", email = "matt@teleos.ltd"}
@@ -64,7 +64,7 @@ ignore_missing_imports = true
 exclude = ["build/"]
 
 [[tool.mypy.overrides]]
-module = "ranch.utils.backlog"
+module = "celery_ranch.utils.backlog"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
@@ -75,5 +75,5 @@ ignore_errors = true
 testpaths = ["tests"]
 
 [tool.coverage.run]
-source = ["ranch"]
+source = ["celery_ranch"]
 omit = ["examples/*", "build/*"]
