@@ -161,3 +161,14 @@ for key in lru_keys:
 - Increase the number of prioritization workers
 - Split high-volume clients into multiple LRU keys
 - Consider adding task expiration to the backlog
+
+## Code Coverage
+
+Ranch maintains high test coverage to ensure code quality and reliability. You can:
+
+```bash
+# Generate XML coverage report for Codecov
+pytest --cov=ranch --cov-report=xml
+```
+
+You can view the latest coverage reports on [Codecov](https://codecov.io/gh/teleos-consulting/celery-ranch), which tracks coverage metrics for the project.

@@ -12,9 +12,12 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.8', '3.9', '3.10']
+      fail-fast: false
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 2
     
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
@@ -35,7 +38,10 @@ jobs:
       uses: codecov/codecov-action@v5
       with:
         file: ./coverage.xml
+        token: ${{ secrets.CODECOV_TOKEN }}
         fail_ci_if_error: false
+        flags: python-${{ matrix.python-version }},unittest
+        name: codecov-umbrella
 
   lint:
     runs-on: ubuntu-latest
