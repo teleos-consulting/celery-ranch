@@ -247,7 +247,7 @@ def test_redis_storage_delete(mock_redis):
 
 @patch("redis.Redis")
 def test_redis_storage_get_keys(mock_redis):
-    """Test get_all_keys and get_keys_by_prefix methods."""
+    """Test get_all_keys method."""
     # Setup mock
     redis_client = MagicMock()
     mock_keys = MagicMock()
@@ -268,6 +268,26 @@ def test_redis_storage_get_keys(mock_redis):
     # Test get_all_keys
     all_keys = storage.get_all_keys()
     assert sorted(all_keys) == sorted(["key1", "key2", "prefix_key1", "prefix_key2"])
+
+
+@patch("redis.Redis")
+def test_redis_storage_get_keys_by_prefix(mock_redis):
+    """Test get_keys_by_prefix method with corrected implementation."""
+    # Setup mock
+    redis_client = MagicMock()
+    
+    # Define a custom implementation for keys method
+    def mock_keys_impl(pattern):
+        prefix = "ranch:prefix_"
+        if pattern == f"{prefix}*":
+            return [b"ranch:prefix_key1", b"ranch:prefix_key2"]
+        return []
+    
+    # Set the mock implementation
+    redis_client.keys = mock_keys_impl
+    
+    # Create storage
+    storage = RedisStorage(redis_client=redis_client, prefix="ranch:")
     
     # Test get_keys_by_prefix
     prefix_keys = storage.get_keys_by_prefix("prefix_")
