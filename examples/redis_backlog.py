@@ -14,11 +14,19 @@ To run this example:
 
 import time
 import random
-import redis
+import importlib.util
 from celery import Celery
 from ranch import lru_task
-from ranch.utils.persistence import RedisStorage
 from ranch.utils.prioritize import configure
+
+# Check if redis is installed
+if importlib.util.find_spec("redis") is None:
+    raise ImportError(
+        "This example requires the redis package. Install it with: pip install ranch[redis]"
+    )
+
+import redis
+from ranch.utils.persistence import RedisStorage
 
 # Create a Celery application with Redis as broker and backend
 app = Celery(
