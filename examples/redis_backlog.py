@@ -24,7 +24,8 @@ from ranch.utils.prioritize import configure
 # Check if redis is installed
 if importlib.util.find_spec("redis") is None:
     raise ImportError(
-        "This example requires the redis package. Install it with: pip install ranch[redis]"
+        "This example requires the redis package. "
+        "Install it with: pip install ranch[redis]"
     )
 
 import redis

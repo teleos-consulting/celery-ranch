@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Callable, Dict, List, Optional, TypeVar, Union, cast
+from typing import Any, Callable, Dict, List, Optional, TypeVar, cast
 
 from celery import Celery, Task
 
@@ -10,7 +10,8 @@ logger = logging.getLogger(__name__)
 
 
 class LRUTask(Task):
-    """Task subclass that adds LRU prioritization functionality with weighted fairness."""
+    """Task subclass that adds LRU prioritization functionality with
+    weighted fairness."""
 
     _app: Celery
 
@@ -18,13 +19,13 @@ class LRUTask(Task):
         super().__init__(*args, **kwargs)
 
     def lru_delay(
-        self, 
-        lru_key: str, 
-        *args: Any, 
+        self,
+        lru_key: str,
+        *args: Any,
         priority_weight: Optional[float] = None,
         tags: Optional[Dict[str, str]] = None,
         expiry: Optional[int] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Any:
         """Schedules task execution with LRU prioritization.
 
@@ -67,24 +68,24 @@ class LRUTask(Task):
 
     def set_priority_weight(self, lru_key: str, weight: float) -> bool:
         """Set the priority weight for a given LRU key.
-        
+
         Lower weight values result in higher priority (shorter waits).
         Higher weight values result in lower priority (longer waits).
-        
+
         Args:
             lru_key: The LRU key to update
             weight: The priority weight (must be positive)
-            
+
         Returns:
             True if successful, False otherwise
         """
         from ranch.utils.prioritize import _lru_tracker
-        
+
         if _lru_tracker is None:
             configure(app=self._app)
-            
+
         from ranch.utils.prioritize import _lru_tracker
-        
+
         if _lru_tracker is not None:
             try:
                 _lru_tracker.set_weight(lru_key, weight)
@@ -96,24 +97,24 @@ class LRUTask(Task):
 
     def add_tag(self, lru_key: str, tag_name: str, tag_value: str) -> bool:
         """Add a tag to an LRU key.
-        
+
         Tags can be used for grouping or categorizing keys.
-        
+
         Args:
             lru_key: The LRU key to tag
             tag_name: The tag name
             tag_value: The tag value
-            
+
         Returns:
             True if successful, False otherwise
         """
         from ranch.utils.prioritize import _lru_tracker
-        
+
         if _lru_tracker is None:
             configure(app=self._app)
-            
+
         from ranch.utils.prioritize import _lru_tracker
-        
+
         if _lru_tracker is not None:
             try:
                 _lru_tracker.add_tag(lru_key, tag_name, tag_value)
@@ -125,65 +126,67 @@ class LRUTask(Task):
 
     def get_client_metadata(self, lru_key: str) -> Dict[str, Any]:
         """Get metadata for an LRU client.
-        
+
         Args:
             lru_key: The LRU key
-            
+
         Returns:
             Dictionary with client metadata
         """
         from ranch.utils.prioritize import _lru_tracker, _task_backlog
-        
+
         if _lru_tracker is None or _task_backlog is None:
             configure(app=self._app)
-            
+
         from ranch.utils.prioritize import _lru_tracker, _task_backlog
-        
+
         result = {
             "lru_key": lru_key,
             "weight": 1.0,
             "last_execution": None,
             "tags": None,
-            "pending_tasks": 0
+            "pending_tasks": 0,
         }
-        
+
         if _lru_tracker is not None:
             metadata = _lru_tracker.get_metadata(lru_key)
             if metadata:
                 result["weight"] = metadata.weight
                 result["last_execution"] = metadata.timestamp
                 result["tags"] = metadata.tags
-        
+
         if _task_backlog is not None:
             tasks = _task_backlog.get_tasks_by_lru_key(lru_key)
             result["pending_tasks"] = len(tasks)
-            
+
         return result
-        
-    def get_tagged_clients(self, tag_name: str, tag_value: Optional[str] = None) -> List[str]:
+
+    def get_tagged_clients(
+        self, tag_name: str, tag_value: Optional[str] = None
+    ) -> List[str]:
         """Get all client keys with a specific tag.
-        
+
         Args:
             tag_name: The tag name to search for
             tag_value: Optional specific value to match
-            
+
         Returns:
             List of client keys with the specified tag
         """
         from ranch.utils.prioritize import _lru_tracker
-        
+
         if _lru_tracker is None:
             configure(app=self._app)
-            
+
         from ranch.utils.prioritize import _lru_tracker
-        
+
         if _lru_tracker is not None:
             return _lru_tracker.get_keys_by_tag(tag_name, tag_value)
         return []
-        
+
     def get_system_status(self) -> Dict[str, Any]:
         """Get the current status of the LRU priority system.
-        
+
         Returns:
             A dictionary with status information
         """
@@ -191,9 +194,7 @@ class LRUTask(Task):
 
 
 def lru_task(
-    app: Celery, 
-    config: Optional[Dict[str, Any]] = None,
-    **options: Any
+    app: Celery, config: Optional[Dict[str, Any]] = None, **options: Any
 ) -> Callable[[F], F]:
     """Decorator to create an LRU-aware task.
 

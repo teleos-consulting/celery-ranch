@@ -34,7 +34,7 @@ def test_lru_task_decorator(celery_app):
 
 @patch("ranch.utils.prioritize.prioritize_task.delay")
 def test_lru_delay_method(mock_prioritize_delay, celery_app):
-    """Test that lru_delay stores the task in the backlog and triggers prioritization."""
+    """Test that lru_delay stores the task in backlog and triggers prioritization."""
 
     @lru_task(celery_app)
     def test_task(arg1, arg2=None):
