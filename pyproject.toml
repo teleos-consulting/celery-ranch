@@ -70,3 +70,10 @@ ignore_errors = true
 [[tool.mypy.overrides]]
 module = "examples.*"
 ignore_errors = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["ranch"]
+omit = ["examples/*", "build/*"]
