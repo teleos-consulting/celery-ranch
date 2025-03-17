@@ -6,7 +6,7 @@
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/release/python-380/)
 [![Celery 5.3.4+](https://img.shields.io/badge/celery-5.3.4+-green.svg)](https://docs.celeryproject.org/)
 
-A Python extension library for Celery that provides fair task scheduling using LRU (Least Recently Used) prioritization.
+A Python extension library for Celery that provides fair task scheduling using LRU (Least Recently Used) prioritization with additional features like weighted priority, task expiry, and client tagging.
 
 ## Installation
 
@@ -24,10 +24,15 @@ pip install ranch[redis]
 
 - Fair task distribution among multiple clients
 - LRU-based prioritization of tasks
+- Weighted priority for different client importance levels
+- Task expiry to prevent stale tasks from consuming resources
+- Client tagging for organization and filtering
 - Seamless integration with existing Celery applications
 - No monopolization of resources by high-volume clients
+- Robust Redis connection handling with retry logic and TLS support
+- Configurable serialization options (pickle/JSON)
 
-## Usage
+## Basic Usage
 
 ```python
 from celery import Celery
@@ -44,13 +49,55 @@ def process_data(data):
 result = process_data.lru_delay("client_id", data_to_process)
 ```
 
+## Advanced Usage
+
+### Weighted Priority
+
+```python
+# Set client priority (0.5 = 2x priority, 2.0 = 0.5x priority)
+process_data.set_priority_weight("premium_client", 0.5)
+
+# Submit task with priority and expiry
+result = process_data.lru_delay(
+    "premium_client",         # LRU key
+    data_to_process,          # Task argument
+    priority_weight=0.5,      # Priority weight
+    expiry=1800               # Expires after 30 minutes
+)
+```
+
+### Client Organization with Tags
+
+```python
+# Add tags to clients for organization
+process_data.add_tag("client1", "region", "us-west")
+process_data.add_tag("client2", "region", "us-east")
+process_data.add_tag("client1", "tier", "premium")
+
+# Find clients by tag
+premium_clients = process_data.get_tagged_clients("tier", "premium")
+```
+
+### Monitoring
+
+```python
+# Get client information
+client_info = process_data.get_client_metadata("client_id")
+print(f"Client priority: {client_info['weight']}")
+print(f"Pending tasks: {client_info['pending_tasks']}")
+
+# Get system status
+status = process_data.get_system_status()
+print(f"Backlog size: {status['backlog_size']}")
+```
+
 ## How It Works
 
 The library works by:
 1. Intercepting task calls via the `lru_delay()` method
 2. Placing the original task in a backlog
 3. Creating a prioritization task in a dedicated queue
-4. Using a worker to select the highest priority task based on LRU history
+4. Using a worker to select the highest priority task based on weighted LRU history
 5. Executing the selected task and updating the LRU tracking
 
 ## Development and Contribution
