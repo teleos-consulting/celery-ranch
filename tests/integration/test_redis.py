@@ -5,7 +5,7 @@ import os
 import pytest
 import redis
 
-from ranch.utils.persistence import RedisStorage
+from celery_ranch.utils.persistence import RedisStorage
 
 
 @pytest.fixture
