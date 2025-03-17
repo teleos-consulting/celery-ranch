@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 30s
+      retries: 5
+
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: ranch_user
+      POSTGRES_PASSWORD: ranch_password
+      POSTGRES_DB: ranch_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ranch_user -d ranch_db"]
+      interval: 5s
+      timeout: 30s
+      retries: 5
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://ranch_user:ranch_password@postgres:5432/ranch_db
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    command: celery -A app.tasks worker --loglevel=info
+
+  flower:
+    image: mher/flower:latest
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - FLOWER_PORT=5555
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+      - worker
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://ranch_user:ranch_password@postgres:5432/ranch_db
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - postgres
+      - worker
+    command: python app/main.py
+
+volumes:
+  redis-data:
+  postgres-data:

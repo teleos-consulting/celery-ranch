@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ranch Demo App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+        .job-status-pending {
+            color: #f39c12;
+        }
+        .job-status-processing {
+            color: #3498db;
+        }
+        .job-status-completed {
+            color: #2ecc71;
+        }
+        .job-status-failed {
+            color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Ranch Demo: Fair Task Scheduling with LRU</h1>
+        <p class="lead">This demo shows Ranch in action, prioritizing tasks fairly across different clients.</p>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Clients</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for client in clients %}
+                                <tr>
+                                    <td>{{ client.id }}</td>
+                                    <td>{{ client.name }}</td>
+                                    <td>{{ client.email }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary create-job-btn" 
+                                                data-client-id="{{ client.id }}" 
+                                                data-client-name="{{ client.name }}">
+                                            Create Job
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5>Generate Test Jobs</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="generate-jobs-form">
+                            <div class="mb-3">
+                                <label for="num-jobs" class="form-label">Number of jobs</label>
+                                <input type="number" class="form-control" id="num-jobs" value="5" min="1" max="20">
+                            </div>
+                            <button type="submit" class="btn btn-success">Generate Random Jobs</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5>Recent Jobs</h5>
+                        <button id="refresh-jobs" class="btn btn-sm btn-outline-secondary">Refresh</button>
+                    </div>
+                    <div class="card-body">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Client</th>
+                                    <th>Size (MB)</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="jobs-table-body">
+                                {% for job in jobs %}
+                                <tr>
+                                    <td>{{ job.id }}</td>
+                                    <td>Client {{ job.client_id }}</td>
+                                    <td>{{ "%.2f"|format(job.data_size) }}</td>
+                                    <td class="job-status-{{ job.status }}">{{ job.status }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5>How Ranch Works</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Ranch prioritizes tasks using an LRU (Least Recently Used) approach:</p>
+                        <ol>
+                            <li>Tasks are grouped by client ID as the LRU key</li>
+                            <li>The client that hasn't had a task executed for the longest time gets priority</li>
+                            <li>This ensures fair execution even if one client submits many more tasks</li>
+                            <li>No client monopolizes the worker resources</li>
+                        </ol>
+                        <p>Watch how the jobs are executed - clients take turns rather than one client getting all its tasks done first!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Create Job Modal -->
+    <div class="modal fade" id="createJobModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create Job for <span id="client-name-placeholder"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="create-job-form">
+                        <input type="hidden" id="client-id-input">
+                        <div class="mb-3">
+                            <label for="data-size" class="form-label">Data Size (MB)</label>
+                            <input type="number" class="form-control" id="data-size" value="5" min="0.1" max="20" step="0.1">
+                            <div class="form-text">Larger sizes take longer to process</div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="submit-job">Create Job</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Create job buttons
+            document.querySelectorAll('.create-job-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const clientId = this.getAttribute('data-client-id');
+                    const clientName = this.getAttribute('data-client-name');
+                    
+                    document.getElementById('client-id-input').value = clientId;
+                    document.getElementById('client-name-placeholder').textContent = clientName;
+                    
+                    const modal = new bootstrap.Modal(document.getElementById('createJobModal'));
+                    modal.show();
+                });
+            });
+            
+            // Submit job button
+            document.getElementById('submit-job').addEventListener('click', function() {
+                const clientId = document.getElementById('client-id-input').value;
+                const dataSize = document.getElementById('data-size').value;
+                
+                fetch('/api/jobs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        client_id: parseInt(clientId),
+                        data_size: parseFloat(dataSize)
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('createJobModal'));
+                    modal.hide();
+                    refreshJobs();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to create job');
+                });
+            });
+            
+            // Generate jobs form
+            document.getElementById('generate-jobs-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const numJobs = document.getElementById('num-jobs').value;
+                
+                fetch('/api/generate-jobs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        num_jobs: parseInt(numJobs)
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    refreshJobs();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to generate jobs');
+                });
+            });
+            
+            // Refresh jobs button
+            document.getElementById('refresh-jobs').addEventListener('click', refreshJobs);
+            
+            // Function to refresh jobs list
+            function refreshJobs() {
+                fetch('/api/jobs')
+                .then(response => response.json())
+                .then(jobs => {
+                    const tableBody = document.getElementById('jobs-table-body');
+                    tableBody.innerHTML = '';
+                    
+                    jobs.slice(0, 10).forEach(job => {
+                        const row = document.createElement('tr');
+                        
+                        const idCell = document.createElement('td');
+                        idCell.textContent = job.id;
+                        row.appendChild(idCell);
+                        
+                        const clientCell = document.createElement('td');
+                        clientCell.textContent = `Client ${job.client_id}`;
+                        row.appendChild(clientCell);
+                        
+                        const sizeCell = document.createElement('td');
+                        sizeCell.textContent = job.data_size.toFixed(2);
+                        row.appendChild(sizeCell);
+                        
+                        const statusCell = document.createElement('td');
+                        statusCell.textContent = job.status;
+                        statusCell.className = `job-status-${job.status}`;
+                        row.appendChild(statusCell);
+                        
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }
+            
+            // Auto refresh jobs every 5 seconds
+            setInterval(refreshJobs, 5000);
+        });
+    </script>
+</body>
+</html>
