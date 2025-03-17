@@ -22,7 +22,7 @@ def retry_on_error(
 
     Args:
         max_attempts: Maximum number of retry attempts
-        backoff_factor: Factor to determine delay between retries 
+        backoff_factor: Factor to determine delay between retries
         (seconds = backoff_factor * 2 ^ (attempt))
         exceptions: Tuple of exceptions to catch and retry on
     """

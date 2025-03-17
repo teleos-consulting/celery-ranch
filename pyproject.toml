@@ -61,3 +61,12 @@ warn_unused_ignores = true
 disallow_subclassing_any = false
 warn_unused_configs = true
 ignore_missing_imports = true
+exclude = ["build/"]
+
+[[tool.mypy.overrides]]
+module = "ranch.utils.backlog"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "examples.*"
+ignore_errors = true

@@ -24,7 +24,7 @@ class TaskBacklog:
         """Initialize the task backlog.
 
         Args:
-            storage: Storage backend to use for persistence. If None, uses 
+            storage: Storage backend to use for persistence. If None, uses
             in-memory storage.
         """
         self._storage = storage or InMemoryStorage()

@@ -29,7 +29,7 @@ class LRUTracker:
         """Initialize the LRU tracker.
 
         Args:
-            storage: Storage backend to use for persistence. If None, uses 
+            storage: Storage backend to use for persistence. If None, uses
             in-memory storage.
         """
         # Use the provided storage or create an in-memory one

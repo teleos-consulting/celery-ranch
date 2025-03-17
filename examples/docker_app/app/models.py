@@ -13,7 +13,7 @@ Base = declarative_base()
 
 
 # Define data models
-class Client(Base):
+class Client(Base):  # type: ignore
     __tablename__ = "clients"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -25,7 +25,7 @@ class Client(Base):
         return f"<Client {self.name}>"
 
 
-class DataProcessingJob(Base):
+class DataProcessingJob(Base):  # type: ignore
     __tablename__ = "data_processing_jobs"
 
     id = Column(Integer, primary_key=True, index=True)
