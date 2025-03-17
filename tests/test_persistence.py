@@ -394,7 +394,7 @@ def test_redis_storage_key_errors(mock_redis):
     )
     
     # Suppress logs during test
-    with patch('ranch.utils.persistence.logger'):
+    with patch('celery_ranch.utils.persistence.logger'):
         try:
             # Test get with connection error - should eventually raise after retries
             storage.get("test_key")
