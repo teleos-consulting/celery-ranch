@@ -1,0 +1,85 @@
+[MASTER]
+# Python version
+py-version = 3.8
+
+# Add files or directories to the blacklist
+ignore=CVS, .git, .eggs, __pycache__, build, dist, docs/conf.py, tests/
+
+# List of members which are set dynamically and missed by pylint inference
+# system, and so shouldn't trigger E1101 when accessed.
+generated-members=REQUEST,acl_users,aq_parent,objects
+
+# Control the number of jobs run in parallel
+jobs=1
+
+[FORMAT]
+# Maximum number of characters on a single line
+max-line-length=100
+
+# String used as indentation unit
+indent-string='    '
+
+[MESSAGES CONTROL]
+# C0111: Missing docstring (will be addressed gradually)
+# W0511: Used when a warning note as FIXME or XXX is detected.
+# R0903: Too few public methods warning
+# C0103: Invalid name format
+# W0621: Redefining name from outer scope
+# W0212: Access to a protected member of a class
+# R0913: Too many arguments
+# R0914: Too many local variables
+disable=C0111,W0511,R0903,C0103,W0621,W0212,R0913,R0914
+
+[REPORTS]
+# Set the output format
+output-format=text
+
+# Tells whether to display a full report or only the messages
+reports=no
+
+# Python expression which should return a note less than 10 (10 is the highest
+# note). You have access to the variables errors, warnings, statements
+evaluation=10.0 - ((float(5 * error + warning + refactor + convention) / statement) * 10)
+
+[BASIC]
+# Good variable names
+good-names=i,j,k,ex,Run,_,id
+
+# List of builtins function names that should not be used
+bad-functions=map,filter,apply,input
+
+[DESIGN]
+# Maximum number of arguments for function / method
+max-args=6
+
+# Maximum number of locals for function / method body
+max-locals=15
+
+# Maximum number of attributes for a class
+max-attributes=20
+
+# Maximum number of public methods for a class
+max-public-methods=20
+
+# Maximum number of boolean expressions in an if statement
+max-bool-expr=5
+
+[TYPECHECK]
+# List of classes whose attributes are not checked by pylint
+ignored-classes=SQLObject, optparse.Values, numpy, Celery, Task, CeleryTask, RedisStorage, InMemoryStorage
+
+# List of members which are set dynamically
+generated-members=REQUEST,acl_users,aq_parent,objects
+
+[SIMILARITIES]
+# Minimum lines number of a similarity
+min-similarity-lines=4
+
+# Ignore comments when computing similarities
+ignore-comments=yes
+
+# Ignore docstrings when computing similarities
+ignore-docstrings=yes
+
+# Ignore imports when computing similarities
+ignore-imports=no

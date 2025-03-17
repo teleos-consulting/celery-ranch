@@ -16,6 +16,7 @@ pytest --cov=. --cov-report=html  # Generate HTML coverage report
 
 # Linting
 flake8                     # Run linter
+pylint ranch               # Run pylint on package
 black .                    # Format code
 isort .                    # Sort imports
 

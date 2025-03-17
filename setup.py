@@ -15,6 +15,7 @@ setup(
             "isort",
             "flake8",
             "mypy",
+            "pylint",
         ],
     },
     author="Claude",
