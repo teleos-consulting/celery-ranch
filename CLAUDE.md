@@ -9,19 +9,40 @@ To minimize GitHub Actions time consumption and avoid failed CI builds, follow t
    pre-commit run --files $(git diff --name-only)
    ```
 
-2. Run type checking and linting:
+2. Run type checking and linting focused on the main package:
    ```bash
    mypy .
-   flake8
+   flake8 ranch
    pylint ranch
    ```
 
-3. Run tests with coverage to ensure nothing breaks:
+3. Run tests with coverage to ensure the required 80% threshold is met:
    ```bash
-   pytest --cov=ranch
+   pytest --cov=ranch --cov-report=term-missing
    ```
 
-4. For significant changes, check GitHub Actions locally with `act`:
+4. If tests fail, troubleshoot by running specific test files with detailed output:
+   ```bash
+   pytest tests/test_failing_file.py -xvs
+   ```
+
+5. Before submitting a PR, make a final verification:
+   ```bash
+   # Verify all tests pass
+   pytest
+
+   # Check coverage meets requirements (80% or higher)
+   pytest --cov=ranch --cov-report=term-missing
+
+   # Run linting on main package code
+   flake8 ranch
+   pylint ranch
+   
+   # Verify type checking
+   mypy .
+   ```
+
+6. For significant changes, check GitHub Actions locally with `act`:
    ```bash
    act -j unit-tests
    ```
@@ -37,18 +58,24 @@ source venv/bin/activate
 pip install -e ".[dev]"
 
 # Testing
-pytest                     # Run all tests
-pytest -xvs                # Verbose test output
-pytest --cov=ranch         # Run tests with coverage for ranch package
+pytest                                # Run all tests
+pytest -xvs                           # Verbose test output
+pytest tests/test_file.py -xvs        # Run one test file with verbose output
+pytest --cov=ranch                    # Run tests with coverage for ranch package
+pytest --cov=ranch --cov-report=term-missing  # Coverage with report of missing lines
 pytest --cov=ranch --cov-report=html  # Generate HTML coverage report
-pytest tests/integration/  # Run only integration tests
-pytest tests/test_lru_task.py  # Run specific test module
+pytest tests/integration/             # Run only integration tests
+pytest tests/test_lru_task.py         # Run specific test module
+pytest -k "test_name_pattern"         # Run tests matching a pattern
 
 # Linting and formatting
-flake8                     # Run linter
-pylint ranch               # Run pylint on package
-black .                    # Format code
-isort .                    # Sort imports
+flake8 ranch               # Run flake8 linter on main package only (faster)
+flake8                     # Run flake8 on whole project
+pylint ranch               # Run pylint on package only (more focused results)
+black ranch                # Format main package code
+black .                    # Format all code
+isort ranch                # Sort imports in main package
+isort .                    # Sort imports in all files
 pre-commit run --all-files # Run all pre-commit hooks
 
 # Type checking
@@ -80,16 +107,25 @@ twine check dist/*         # Verify package quality
 
 ## Testing Standards
 
-- Minimum test coverage: 80%
+- Minimum test coverage: 80% (package requirement enforced by CI)
 - Unit tests for all functions/methods
-- Integration tests for worker tasks 
-- Mocked brokers for testing task execution
+- Integration tests for worker tasks (Redis required for some tests)
+- Mocked brokers for testing task execution (avoids Redis dependency for most tests)
 - Test task revocation and failure cases
 - Use parametrized tests for multiple input scenarios
 - Create fixtures for common test setup
 - Clearly name tests with pattern `test_<function>_<scenario>_<expected_result>`
 - Test edge cases explicitly (empty inputs, max values, etc.)
 - Add regression tests when fixing bugs
+
+### Test Mocking Best Practices
+
+- Mock time-dependent functions (use `patch('time.time')` with fixed return values)
+- Use appropriate mocking for Redis operations (`patch.object(storage, '_redis')`)
+- Mock logger to prevent excessive output during tests (`patch('module.logger')`)
+- For storage testing, mock the storage interface rather than real Redis connections
+- Use side_effect on mocks to create dynamic mock behavior for complex flows
+- When testing error handling, mock exceptions with `side_effect = Exception("message")`
 
 ## Celery Best Practices
 

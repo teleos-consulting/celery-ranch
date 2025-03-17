@@ -25,8 +25,4 @@ from ranch.utils.persistence import SerializerType
 from ranch.utils.prioritize import get_status
 
 __version__ = "0.1.1"
-__all__ = [
-    "lru_task",
-    "SerializerType",
-    "get_status"
-]
+__all__ = ["lru_task", "SerializerType", "get_status"]
