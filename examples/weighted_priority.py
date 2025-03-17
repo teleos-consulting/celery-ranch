@@ -20,7 +20,7 @@ from datetime import datetime
 
 from celery import Celery
 
-from ranch import SerializerType, lru_task
+from celery_ranch import SerializerType, lru_task
 
 # Create a Celery application with Redis broker
 app = Celery(
@@ -29,9 +29,9 @@ app = Celery(
     result_backend="redis://localhost:6379/0",
 )
 
-# Configure Ranch with JSON serializer and key expiry
-app.conf.ranch = {
-    "redis_prefix": "ranch_example:",
+# Configure Celery Ranch with JSON serializer and key expiry
+app.conf.celery_ranch = {
+    "redis_prefix": "celery_ranch_example:",
     "redis_serializer": SerializerType.JSON,  # More human-readable in Redis
     "redis_key_ttl": 3600,  # Default 1-hour expiry for keys
     "redis_max_retries": 3,

@@ -7,10 +7,10 @@ import pytest
 from celery import Celery
 from celery.result import AsyncResult
 
-from ranch import lru_task
-from ranch.task import LRUTask
-from ranch.utils.lru_tracker import LRUTracker
-from ranch.utils.backlog import TaskBacklog
+from celery_ranch import lru_task
+from celery_ranch.task import LRUTask
+from celery_ranch.utils.lru_tracker import LRUTracker
+from celery_ranch.utils.backlog import TaskBacklog
 
 
 @pytest.fixture
@@ -33,7 +33,7 @@ def lru_task_instance(celery_app):
 
 def test_lru_delay_simple(lru_task_instance):
     """Test basic lru_delay functionality."""
-    with patch("ranch.task.prioritize_task") as mock_prioritize_task:
+    with patch("celery_ranch.task.prioritize_task") as mock_prioritize_task:
         mock_result = MagicMock()
         mock_prioritize_task.delay.return_value = mock_result
         
@@ -47,7 +47,7 @@ def test_lru_delay_simple(lru_task_instance):
         assert result is mock_prioritize_task.delay.return_value
 
 
-@patch("ranch.utils.prioritize._lru_tracker")
+@patch("celery_ranch.utils.prioritize._lru_tracker")
 def test_set_priority_weight(mock_lru_tracker, lru_task_instance):
     """Test set_priority_weight method."""
     # Setup mocks
@@ -64,7 +64,7 @@ def test_set_priority_weight(mock_lru_tracker, lru_task_instance):
     assert result is False
 
 
-@patch("ranch.utils.prioritize._lru_tracker")
+@patch("celery_ranch.utils.prioritize._lru_tracker")
 def test_add_tag(mock_lru_tracker, lru_task_instance):
     """Test add_tag method."""
     # Setup mocks
@@ -81,8 +81,8 @@ def test_add_tag(mock_lru_tracker, lru_task_instance):
     assert result is False
 
 
-@patch("ranch.utils.prioritize._lru_tracker")
-@patch("ranch.utils.prioritize._task_backlog")
+@patch("celery_ranch.utils.prioritize._lru_tracker")
+@patch("celery_ranch.utils.prioritize._task_backlog")
 def test_get_client_metadata(mock_task_backlog, mock_lru_tracker, lru_task_instance):
     """Test get_client_metadata method."""
     # Setup mocks
@@ -109,7 +109,7 @@ def test_get_client_metadata(mock_task_backlog, mock_lru_tracker, lru_task_insta
     mock_task_backlog.get_tasks_by_lru_key.assert_called_once_with("client1")
 
 
-@patch("ranch.utils.prioritize._lru_tracker")
+@patch("celery_ranch.utils.prioritize._lru_tracker")
 def test_get_tagged_clients(mock_lru_tracker, lru_task_instance):
     """Test get_tagged_clients method."""
     # Setup mocks

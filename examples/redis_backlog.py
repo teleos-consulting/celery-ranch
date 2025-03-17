@@ -1,5 +1,5 @@
 """
-Advanced example showing how to use ranch with Redis storage.
+Advanced example showing how to use celery-ranch with Redis storage.
 
 This demonstrates how to use Redis for persistent storage of the task backlog
 and LRU tracking information.
@@ -18,19 +18,19 @@ import time
 
 from celery import Celery
 
-from ranch import lru_task
-from ranch.utils.prioritize import configure
+from celery_ranch import lru_task
+from celery_ranch.utils.prioritize import configure
 
 # Check if redis is installed
 if importlib.util.find_spec("redis") is None:
     raise ImportError(
         "This example requires the redis package. "
-        "Install it with: pip install ranch[redis]"
+        "Install it with: pip install celery-ranch[redis]"
     )
 
 import redis
 
-from ranch.utils.persistence import RedisStorage
+from celery_ranch.utils.persistence import RedisStorage
 
 # Create a Celery application with Redis as broker and backend
 app = Celery(
@@ -41,7 +41,7 @@ app = Celery(
 
 # Configure LRU priority with Redis storage
 redis_client = redis.from_url("redis://localhost:6379/0")
-redis_storage = RedisStorage(redis_client, prefix="my_app:ranch:")
+redis_storage = RedisStorage(redis_client, prefix="my_app:celery_ranch:")
 configure(app=app, storage=redis_storage)
 
 

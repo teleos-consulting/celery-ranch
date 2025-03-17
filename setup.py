@@ -1,9 +1,9 @@
 from setuptools import find_packages, setup
 
 setup(
-    name="ranch",
+    name="celery-ranch",
     version="0.1.0",
-    packages=find_packages(),
+    packages=["celery_ranch", "celery_ranch.utils"],
     install_requires=[
         "celery>=5.3.4",
     ],
@@ -26,7 +26,7 @@ setup(
     },
     author="Matthew DesEnfants",
     author_email="matt@teleos.ltd",
-    description="Ranch: A Celery extension providing LRU-based task prioritization",
+    description="Celery Ranch: A Celery extension providing LRU-based task prioritization",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     url="https://github.com/teleos-consulting/celery-ranch",

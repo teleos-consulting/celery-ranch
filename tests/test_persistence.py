@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from ranch.utils.persistence import (InMemoryStorage, StorageBackend, 
+from celery_ranch.utils.persistence import (InMemoryStorage, StorageBackend, 
                                     RedisStorage, SerializerType, retry_on_error)
 
 
@@ -394,7 +394,7 @@ def test_redis_storage_key_errors(mock_redis):
     )
     
     # Suppress logs during test
-    with patch('ranch.utils.persistence.logger'):
+    with patch('celery_ranch.utils.persistence.logger'):
         try:
             # Test get with connection error - should eventually raise after retries
             storage.get("test_key")

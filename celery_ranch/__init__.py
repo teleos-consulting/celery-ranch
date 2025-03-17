@@ -1,5 +1,5 @@
 """
-Celery Ranch - A Celery extension providing fair task scheduling with LRU prioritization.
+Celery Ranch - A Celery extension for fair task scheduling with LRU prioritization.
 
 Celery Ranch provides a way to fairly distribute tasks among multiple clients using
 Least Recently Used (LRU) prioritization. This prevents high-volume clients
@@ -9,7 +9,7 @@ Basic usage:
     from celery import Celery
     from celery_ranch import lru_task
 
-    app = Celery('tasks')
+    app = Celery("tasks")
 
     @lru_task(app)
     def process_data(data):

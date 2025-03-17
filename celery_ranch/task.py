@@ -40,7 +40,7 @@ class LRUTask(Task):
         Returns:
             The AsyncResult object for the task
         """
-        from ranch.utils.prioritize import _lru_tracker, _task_backlog
+        from celery_ranch.utils.prioritize import _lru_tracker, _task_backlog
 
         # Make sure the storage is initialized
         if _task_backlog is None or _lru_tracker is None:
@@ -79,12 +79,12 @@ class LRUTask(Task):
         Returns:
             True if successful, False otherwise
         """
-        from ranch.utils.prioritize import _lru_tracker
+        from celery_ranch.utils.prioritize import _lru_tracker
 
         if _lru_tracker is None:
             configure(app=self._app)
 
-        from ranch.utils.prioritize import _lru_tracker
+        from celery_ranch.utils.prioritize import _lru_tracker
 
         if _lru_tracker is not None:
             try:
@@ -108,12 +108,12 @@ class LRUTask(Task):
         Returns:
             True if successful, False otherwise
         """
-        from ranch.utils.prioritize import _lru_tracker
+        from celery_ranch.utils.prioritize import _lru_tracker
 
         if _lru_tracker is None:
             configure(app=self._app)
 
-        from ranch.utils.prioritize import _lru_tracker
+        from celery_ranch.utils.prioritize import _lru_tracker
 
         if _lru_tracker is not None:
             try:
@@ -133,12 +133,12 @@ class LRUTask(Task):
         Returns:
             Dictionary with client metadata
         """
-        from ranch.utils.prioritize import _lru_tracker, _task_backlog
+        from celery_ranch.utils.prioritize import _lru_tracker, _task_backlog
 
         if _lru_tracker is None or _task_backlog is None:
             configure(app=self._app)
 
-        from ranch.utils.prioritize import _lru_tracker, _task_backlog
+        from celery_ranch.utils.prioritize import _lru_tracker, _task_backlog
 
         result = {
             "lru_key": lru_key,
@@ -173,12 +173,12 @@ class LRUTask(Task):
         Returns:
             List of client keys with the specified tag
         """
-        from ranch.utils.prioritize import _lru_tracker
+        from celery_ranch.utils.prioritize import _lru_tracker
 
         if _lru_tracker is None:
             configure(app=self._app)
 
-        from ranch.utils.prioritize import _lru_tracker
+        from celery_ranch.utils.prioritize import _lru_tracker
 
         if _lru_tracker is not None:
             return _lru_tracker.get_keys_by_tag(tag_name, tag_value)
@@ -200,7 +200,7 @@ def lru_task(
 
     Args:
         app: The Celery application instance
-        config: Optional configuration dictionary for Ranch
+        config: Optional configuration dictionary for Celery Ranch
         **options: Additional options to pass to the task decorator
 
     Returns:
