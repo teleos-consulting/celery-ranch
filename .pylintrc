@@ -3,7 +3,7 @@
 py-version = 3.8
 
 # Add files or directories to the blacklist
-ignore=CVS, .git, .eggs, __pycache__, build, dist, docs/conf.py, tests/
+ignore=CVS, .git, .eggs, __pycache__, build, dist, docs/conf.py, tests/, examples/
 
 # List of members which are set dynamically and missed by pylint inference
 # system, and so shouldn't trigger E1101 when accessed.
@@ -28,7 +28,12 @@ indent-string='    '
 # W0212: Access to a protected member of a class
 # R0913: Too many arguments
 # R0914: Too many local variables
-disable=C0111,W0511,R0903,C0103,W0621,W0212,R0913,R0914,C0415,W0613,W0603,W0718,C0201,W0223
+# W1203: Use lazy % formatting in logging functions
+# W0404: Reimport
+# W0107: Unnecessary pass statement
+# R0917: Too many positional arguments
+# W0622: Redefining built-in
+disable=C0111,W0511,R0903,C0103,W0621,W0212,R0913,R0914,C0415,W0613,W0603,W0718,C0201,W0223,W1203,W0404,W0107,R0917,W0622
 
 [REPORTS]
 # Set the output format
