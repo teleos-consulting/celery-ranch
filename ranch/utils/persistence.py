@@ -2,11 +2,8 @@
 Persistent storage implementations for task backlog and LRU tracking.
 """
 
-import json
 import pickle
-from typing import Any, Dict, Optional, Tuple, List
-
-from celery import Task
+from typing import Any, Dict, Optional, List
 
 
 class InMemoryStorage:

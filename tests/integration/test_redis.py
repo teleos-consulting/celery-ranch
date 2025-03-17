@@ -1,7 +1,6 @@
 """Integration tests with Redis."""
 
 import os
-import time
 import pytest
 import redis
 
