@@ -1,10 +1,11 @@
 # Celery Ranch
 
 [![Celery Ranch CI](https://github.com/teleos-consulting/celery-ranch/actions/workflows/ci.yml/badge.svg)](https://github.com/teleos-consulting/celery-ranch/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/teleos-consulting/celery-ranch/branch/master/graph/badge.svg)](https://codecov.io/gh/teleos-consulting/celery-ranch)
+[![codecov](https://codecov.io/gh/teleos-consulting/celery-ranch/branch/main/graph/badge.svg)](https://codecov.io/gh/teleos-consulting/celery-ranch)
 [![PyPI version](https://badge.fury.io/py/celery-ranch.svg)](https://badge.fury.io/py/celery-ranch)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/release/python-380/)
 [![Celery 5.3.4+](https://img.shields.io/badge/celery-5.3.4+-green.svg)](https://docs.celeryproject.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A Python extension library for Celery that provides fair task scheduling using LRU (Least Recently Used) prioritization with additional features like weighted priority, task expiry, and client tagging.
 
@@ -155,7 +156,7 @@ mypy .
 
 ### Contribution Guidelines
 
-1. **Fork the repository** and create a feature branch from `master`.
+1. **Fork the repository** and create a feature branch from `main`.
 2. **Write tests** for new features or bug fixes.
 3. **Ensure all tests pass** and the code meets quality standards.
 4. **Update documentation** if necessary.
@@ -174,7 +175,7 @@ mypy .
 
 #### Automated Releases
 
-When a PR with a version bump label is merged to master:
+When a PR with a version bump label is merged to main:
 
 1. The version is automatically incremented in setup.py and __init__.py
 2. The updated package is automatically published to PyPI
