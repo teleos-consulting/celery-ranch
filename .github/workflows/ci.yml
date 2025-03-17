@@ -61,24 +61,24 @@ jobs:
     
     - name: Check code style with flake8
       run: |
-        flake8 ranch --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 ranch --count --max-complexity=10 --max-line-length=100 --statistics
+        flake8 celery_ranch --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 celery_ranch --count --max-complexity=10 --max-line-length=100 --statistics
     
     - name: Check code style with pylint
       run: |
-        pylint --rcfile=.pylintrc --fail-under=9.0 ranch
+        pylint --rcfile=.pylintrc --fail-under=9.0 celery_ranch
     
     - name: Check imports with isort
       run: |
-        isort --check-only --profile black ranch
+        isort --check-only --profile black celery_ranch
     
     - name: Check formatting with black
       run: |
-        black --check ranch
+        black --check celery_ranch
     
     - name: Check types with mypy
       run: |
-        mypy ranch
+        mypy celery_ranch
 
   redis-integration:
     runs-on: ubuntu-latest

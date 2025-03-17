@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from celery import Task
 
-from ranch.utils.persistence import InMemoryStorage, StorageBackend
+from celery_ranch.utils.persistence import InMemoryStorage, StorageBackend
 
 logger = logging.getLogger(__name__)
 

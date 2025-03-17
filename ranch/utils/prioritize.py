@@ -5,9 +5,9 @@ from typing import Any, Dict, Optional
 
 from celery import current_app, shared_task
 
-from ranch.utils.backlog import TaskBacklog
-from ranch.utils.lru_tracker import LRUTracker
-from ranch.utils.persistence import (
+from celery_ranch.utils.backlog import TaskBacklog
+from celery_ranch.utils.lru_tracker import LRUTracker
+from celery_ranch.utils.persistence import (
     InMemoryStorage,
     RedisStorage,
     SerializerType,

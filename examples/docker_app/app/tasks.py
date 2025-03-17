@@ -6,9 +6,9 @@ import redis
 from celery import Celery
 # No need for Session import directly
 
-from ranch import lru_task
-from ranch.utils.persistence import RedisStorage
-from ranch.utils.prioritize import configure
+from celery_ranch import lru_task
+from celery_ranch.utils.persistence import RedisStorage
+from celery_ranch.utils.prioritize import configure
 
 from .config import Config
 from .models import DataProcessingJob, SessionLocal

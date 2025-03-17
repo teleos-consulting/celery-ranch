@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, List, Optional, TypeVar, cast
 
 from celery import Celery, Task
 
-from ranch.utils.prioritize import configure, get_status, prioritize_task
+from celery_ranch.utils.prioritize import configure, get_status, prioritize_task
 
 F = TypeVar("F", bound=Callable[..., Any])
 logger = logging.getLogger(__name__)
