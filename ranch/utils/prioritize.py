@@ -282,18 +282,14 @@ def _setup_redis_storage(app) -> StorageBackend:
 
     # Get Redis configuration
     ranch_config = getattr(app.conf, "ranch", {})
-    redis_prefix = ranch_config.get(
-        "redis_prefix", _DEFAULT_CONFIG["redis_prefix"]
-    )
+    redis_prefix = ranch_config.get("redis_prefix", _DEFAULT_CONFIG["redis_prefix"])
     redis_serializer = ranch_config.get(
         "redis_serializer", _DEFAULT_CONFIG["redis_serializer"]
     )
     redis_max_retries = ranch_config.get(
         "redis_max_retries", _DEFAULT_CONFIG["redis_max_retries"]
     )
-    redis_key_ttl = ranch_config.get(
-        "redis_key_ttl", _DEFAULT_CONFIG["redis_key_ttl"]
-    )
+    redis_key_ttl = ranch_config.get("redis_key_ttl", _DEFAULT_CONFIG["redis_key_ttl"])
 
     # Create Redis storage
     storage = RedisStorage(
