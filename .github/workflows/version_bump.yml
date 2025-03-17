@@ -29,8 +29,8 @@ jobs:
 
     - name: Set Git user
       run: |
-        git config --local user.email "github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "github-actions[bot]"
+        git config --local user.email "matt@teleos.ltd"
+        git config --local user.name "Matthew DesEnfants"
       
     - name: Calculate version bump
       id: bump
