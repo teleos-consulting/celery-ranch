@@ -1,5 +1,33 @@
 # Ranch Development Standards and Guidelines
 
+## Local Development Workflow
+
+To minimize GitHub Actions time consumption and avoid failed CI builds, follow this local workflow before pushing changes:
+
+1. Run pre-commit hooks on all modified files:
+   ```bash
+   pre-commit run --files $(git diff --name-only)
+   ```
+
+2. Run type checking and linting:
+   ```bash
+   mypy .
+   flake8
+   pylint ranch
+   ```
+
+3. Run tests with coverage to ensure nothing breaks:
+   ```bash
+   pytest --cov=ranch
+   ```
+
+4. For significant changes, check GitHub Actions locally with `act`:
+   ```bash
+   act -j unit-tests
+   ```
+
+This workflow catches most issues locally before triggering CI workflows, saving time and resources.
+
 ## Project Commands
 
 ```bash
@@ -112,3 +140,29 @@ twine check dist/*         # Verify package quality
 - Use Redis for backlog storage in production
 - Test with multiple concurrent clients to ensure fair scheduling
 - Consider implementing custom prioritization strategies for specific requirements
+
+## CI/CD Pipeline Optimization
+
+- Use conditional workflows in GitHub Actions to run only relevant jobs
+- Enable caching for dependencies in CI workflows:
+  ```yaml
+  - uses: actions/cache@v3
+    with:
+      path: ~/.cache/pip
+      key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+  ```
+- Parallelize tests by splitting them into different jobs
+- Run linting and type checking as separate jobs that can fail fast
+- Use matrix builds to test across multiple Python versions efficiently
+- Consider using GitHub Actions' `paths` filters to skip workflows for non-code changes:
+  ```yaml
+  on:
+    push:
+      paths:
+        - '**.py'
+        - 'requirements.txt'
+        - 'setup.py'
+        - 'pyproject.toml'
+  ```
+- For documentation-only changes, skip test workflows
+- Set up local CI checks with pre-commit hooks before pushing changes
