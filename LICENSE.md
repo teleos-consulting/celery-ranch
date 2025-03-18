@@ -1,6 +1,6 @@
 # MIT License
 
-Copyright (c) 2025 Matthew DesEnfants, Teleos Consulting Ltd.
+Copyright (c) 2025 Teleos Consulting L.L.C.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
