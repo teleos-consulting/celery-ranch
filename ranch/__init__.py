@@ -1,5 +1,5 @@
 """
-Celery Ranch - A Celery extension providing fair task scheduling with LRU prioritization.
+Celery Ranch - A Celery extension for fair task scheduling with LRU prioritization.
 
 Celery Ranch provides a way to fairly distribute tasks among multiple clients using
 Least Recently Used (LRU) prioritization. This prevents high-volume clients

@@ -102,6 +102,13 @@ print(f"Total backlog size: {status['backlog_size']}")
 - Expired task cleanup prevents backlog accumulation and memory growth
 - Weighted prioritization ensures efficient resource allocation based on client importance
 
+### 8. Custom Dynamic Weight Functions
+- **Dynamic Priority Calculation**: Provide custom functions to calculate priorities at runtime
+- **Custom Data Storage**: Store arbitrary data for clients to use in weight calculations
+- **Bid-based Priority**: Example implementation of a bidding system for queue prioritization
+- **Flexible Resource Allocation**: Enables complex prioritization schemes beyond static weights
+- **Real-time Weight Adjustment**: Weights can be calculated based on current system state
+
 ## Future Enhancement Ideas
 
 1. **Metrics Integration**: Prometheus/StatsD integration for real-time monitoring

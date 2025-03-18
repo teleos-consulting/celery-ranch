@@ -2,7 +2,7 @@ import logging
 import threading
 import time
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from celery_ranch.utils.persistence import InMemoryStorage, StorageBackend
 
@@ -16,13 +16,16 @@ class LRUKeyMetadata:
     timestamp: float  # Last access timestamp
     weight: float = 1.0  # Priority weight (1.0 = normal priority)
     tags: Optional[Dict[str, str]] = None  # Optional tags for the key
+    # Optional custom data for weight functions
+    custom_data: Optional[Dict[str, Any]] = None
 
 
 class LRUTracker:
     """Tracks the least recently used status of task keys with optional weights.
 
     This enhanced version supports weighted prioritization, allowing some clients
-    to have higher or lower priority than others.
+    to have higher or lower priority than others. It also supports custom dynamic
+    weight functions that can be applied at prioritization time.
     """
 
     def __init__(self, storage: Optional[StorageBackend] = None) -> None:
@@ -37,6 +40,8 @@ class LRUTracker:
         self._lock = threading.RLock()
         self._key_prefix = "lru:"
         self._metadata_prefix = "lru_meta:"
+        # Default weight function is None
+        self._weight_function: Optional[Callable[[str, LRUKeyMetadata], float]] = None
 
     def update_timestamp(self, lru_key: str) -> None:
         """Update the last access timestamp for a given LRU key.
@@ -117,6 +122,64 @@ class LRUTracker:
             # Store updated metadata
             self._set_metadata(lru_key, metadata)
 
+    def set_custom_data(self, lru_key: str, key: str, value: Any) -> None:
+        """Set custom data for an LRU key.
+
+        Custom data can be used by dynamic weight functions to determine priority.
+
+        Args:
+            lru_key: The LRU key to update
+            key: The custom data key
+            value: The custom data value
+        """
+        with self._lock:
+            # Get existing metadata if available
+            metadata = self._get_metadata(lru_key)
+            if metadata:
+                if metadata.custom_data is None:
+                    metadata.custom_data = {}
+                metadata.custom_data[key] = value
+            else:
+                # Create new metadata with custom data
+                metadata = LRUKeyMetadata(
+                    timestamp=time.time(),
+                    weight=1.0,
+                    custom_data={key: value}
+                )
+
+            # Store updated metadata
+            self._set_metadata(lru_key, metadata)
+
+    def get_custom_data(self, lru_key: str) -> Optional[Dict[str, Any]]:
+        """Get custom data for an LRU key.
+
+        Args:
+            lru_key: The LRU key
+
+        Returns:
+            Dictionary of custom data or None if no custom data exists
+        """
+        metadata = self._get_metadata(lru_key)
+        return metadata.custom_data if metadata else None
+
+    def set_weight_function(
+            self,
+            weight_function: Optional[Callable[[str, LRUKeyMetadata], float]]
+    ) -> None:
+        """Set a custom dynamic weight function.
+
+        The weight function should take an LRU key and its metadata and return a float
+        representing the priority weight. Lower values = higher priority.
+
+        Args:
+            weight_function: Function that takes (lru_key, metadata) and returns
+                a float, or None to use the static weights
+        """
+        with self._lock:
+            self._weight_function = weight_function
+            name = weight_function.__name__ if weight_function else "None"
+            logger.info(f"Set custom weight function: {name}")
+
     def get_tags(self, lru_key: str) -> Optional[Dict[str, str]]:
         """Get tags for an LRU key.
 
@@ -168,6 +231,9 @@ class LRUTracker:
         """Get the oldest (least recently used) key from a list of keys,
         taking priority weights into account.
 
+        If a custom weight function is set, it will be used to calculate
+        priority for each key.
+
         Args:
             keys: List of LRU keys to compare
 
@@ -186,8 +252,28 @@ class LRUTracker:
                 metadata = self._get_metadata(key)
 
                 if metadata:
-                    # Calculate weighted time: actual_time * weight
-                    weighted_time = (now - metadata.timestamp) * metadata.weight
+                    # If there's a custom weight function, use it
+                    if self._weight_function:
+                        try:
+                            # Use the custom function to get the effective weight
+                            effective_weight = self._weight_function(key, metadata)
+                            if effective_weight <= 0:
+                                key_msg = f"Weight function for {key}"
+                                logger.warning(
+                                    f"{key_msg} returned non-positive weight, "
+                                    f"using default weight instead"
+                                )
+                                effective_weight = metadata.weight
+                        except Exception as e:
+                            logger.error(f"Error in weight function for key {key}: {e}")
+                            # Fall back to static weight on error
+                            effective_weight = metadata.weight
+                    else:
+                        # Use the static weight from metadata
+                        effective_weight = metadata.weight
+
+                    # Calculate weighted time: actual_time * effective_weight
+                    weighted_time = (now - metadata.timestamp) * effective_weight
                     weighted_times[key] = (weighted_time, metadata.timestamp)
                 else:
                     # Use default weight if no metadata

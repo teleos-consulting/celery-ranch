@@ -26,6 +26,7 @@ pip install celery-ranch[redis]
 - Fair task distribution among multiple clients
 - LRU-based prioritization of tasks
 - Weighted priority for different client importance levels
+- Custom dynamic weight functions for advanced prioritization strategies
 - Task expiry to prevent stale tasks from consuming resources
 - Client tagging for organization and filtering
 - Seamless integration with existing Celery applications
@@ -65,6 +66,32 @@ result = process_data.lru_delay(
     priority_weight=0.5,      # Priority weight
     expiry=1800               # Expires after 30 minutes
 )
+```
+
+### Custom Dynamic Weight Functions
+
+```python
+from celery_ranch.utils.lru_tracker import LRUKeyMetadata
+
+# Define a custom weight function
+def bid_based_priority(lru_key: str, metadata: LRUKeyMetadata) -> float:
+    """Calculate priority based on bid value in custom data."""
+    # Default weight if no custom data
+    if not metadata.custom_data or "bid" not in metadata.custom_data:
+        return 1.0
+    
+    # Get bid value and return inverted weight (lower = higher priority)
+    bid = metadata.custom_data.get("bid", 1.0)
+    return 1.0 / max(bid, 0.01)  # Ensure positive weight
+
+# Create task with custom weight function
+@lru_task(app, weight_function=bid_based_priority)
+def process_data(data):
+    # Process data
+    return result
+
+# Store custom data for clients
+process_data.set_custom_data("client1", "bid", 10.0)  # Higher bid = higher priority
 ```
 
 ### Client Organization with Tags
