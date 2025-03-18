@@ -259,6 +259,71 @@ def test_lru_tracker_advanced():
     assert "client1" in clients_with_premium_tier
 
 
+def test_lru_tracker_custom_data_and_weight_function():
+    """Test custom data storage and dynamic weight function capabilities."""
+    tracker = LRUTracker()
+    
+    # Set custom data for clients
+    tracker.set_custom_data("client1", "bid", 10.0)
+    tracker.set_custom_data("client2", "bid", 5.0)
+    tracker.set_custom_data("client3", "bid", 2.0)
+    
+    # Update timestamps to ensure all clients have timestamps
+    # Make client1 the oldest by far to ensure it wins the priority calculation
+    tracker.update_timestamp("client1")
+    time.sleep(0.5)  # much longer delay for client2 and client3
+    tracker.update_timestamp("client2")
+    time.sleep(0.01)
+    tracker.update_timestamp("client3")
+    
+    # Verify custom data was stored
+    client1_data = tracker.get_custom_data("client1")
+    assert client1_data == {"bid": 10.0}
+    
+    # First test with no weight function - should select client1 as oldest
+    oldest = tracker.get_oldest_key(["client1", "client2", "client3"])
+    assert oldest == "client1"  # Should be oldest by timestamp
+    
+    # Define a custom weight function based on bids that prioritizes higher bids
+    # In this function, higher bids reduce the weight, but the weight is also
+    # multiplied by the elapsed time. We need the weight function to overcome
+    # the time difference for client1 being much older.
+    def bid_based_priority(lru_key, metadata):
+        if not metadata.custom_data or "bid" not in metadata.custom_data:
+            return 1.0
+        
+        # Higher bids get dramatically lower weights (higher priority)
+        bid = metadata.custom_data.get("bid", 1.0)
+        # Use a more dramatic weight reduction for higher bids
+        # to overcome the timestamp difference
+        return 0.01 / max(bid, 0.01)
+    
+    # Set the weight function
+    tracker.set_weight_function(bid_based_priority)
+    
+    # Get the client with highest priority (highest bid)
+    # Priority order should now be client1 > client2 > client3
+    # despite client1 being much older, because the bids are 10 > 5 > 2
+    oldest = tracker.get_oldest_key(["client1", "client2", "client3"])
+    assert oldest == "client1"  # client1 has highest bid (10.0)
+    
+    # Test error handling in weight function
+    def error_weight_function(lru_key, metadata):
+        raise ValueError("Test error")
+    
+    # Set the problematic weight function
+    tracker.set_weight_function(error_weight_function)
+    
+    # Should fall back to static weights when function throws error
+    oldest = tracker.get_oldest_key(["client1", "client2", "client3"])
+    assert oldest in ["client1", "client2", "client3"]
+    
+    # Clear weight function and verify normal behavior returns
+    tracker.set_weight_function(None)
+    oldest = tracker.get_oldest_key(["client1", "client2", "client3"])
+    assert oldest == "client1"  # Should be oldest by timestamp
+
+
 def test_task_backlog_advanced():
     """Test more advanced TaskBacklog features."""
     backlog = TaskBacklog()

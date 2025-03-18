@@ -1,12 +1,12 @@
 import logging
 import threading
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 from celery import current_app, shared_task
 
 from celery_ranch.utils.backlog import TaskBacklog
-from celery_ranch.utils.lru_tracker import LRUTracker
+from celery_ranch.utils.lru_tracker import LRUKeyMetadata, LRUTracker
 from celery_ranch.utils.persistence import (
     InMemoryStorage,
     RedisStorage,
@@ -308,6 +308,7 @@ def configure(
     app=None,
     storage: Optional[StorageBackend] = None,
     config: Optional[Dict[str, Any]] = None,
+    weight_function: Optional[Callable[[str, LRUKeyMetadata], float]] = None,
 ) -> None:
     """Configure the LRU priority system with custom settings.
 
@@ -315,6 +316,8 @@ def configure(
         app: Optional Celery application instance
         storage: Optional custom storage backend
         config: Optional configuration dictionary to update Celery app config
+        weight_function: Optional custom function for calculating dynamic weights
+                      Should take (lru_key, metadata) and return a float
     """
     global _lru_tracker, _task_backlog, _storage
 
@@ -339,6 +342,12 @@ def configure(
         # Initialize trackers with the storage
         _lru_tracker = LRUTracker(storage=_storage)
         _task_backlog = TaskBacklog(storage=_storage)
+
+        # Set custom weight function if provided
+        if weight_function is not None and _lru_tracker is not None:
+            _lru_tracker.set_weight_function(weight_function)
+            name = weight_function.__name__ if weight_function else "None"
+            logger.info(f"Configured custom weight function: {name}")
 
 
 def get_status() -> Dict[str, Any]:

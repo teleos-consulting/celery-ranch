@@ -3,6 +3,7 @@ from typing import Any, Callable, Dict, List, Optional, TypeVar, cast
 
 from celery import Celery, Task
 
+from celery_ranch.utils.lru_tracker import LRUKeyMetadata
 from celery_ranch.utils.prioritize import configure, get_status, prioritize_task
 
 F = TypeVar("F", bound=Callable[..., Any])
@@ -84,8 +85,6 @@ class LRUTask(Task):
         if _lru_tracker is None:
             configure(app=self._app)
 
-        from celery_ranch.utils.prioritize import _lru_tracker
-
         if _lru_tracker is not None:
             try:
                 _lru_tracker.set_weight(lru_key, weight)
@@ -113,8 +112,6 @@ class LRUTask(Task):
         if _lru_tracker is None:
             configure(app=self._app)
 
-        from celery_ranch.utils.prioritize import _lru_tracker
-
         if _lru_tracker is not None:
             try:
                 _lru_tracker.add_tag(lru_key, tag_name, tag_value)
@@ -123,6 +120,54 @@ class LRUTask(Task):
                 logger.error(f"Error adding tag: {e}")
                 return False
         return False
+
+    def set_custom_data(self, lru_key: str, key: str, value: Any) -> bool:
+        """Set custom data for an LRU key.
+
+        Custom data can be used by dynamic weight functions to determine priority.
+
+        Args:
+            lru_key: The LRU key to update
+            key: The custom data key
+            value: The custom data value
+
+        Returns:
+            True if successful, False otherwise
+        """
+        from celery_ranch.utils.prioritize import _lru_tracker
+
+        if _lru_tracker is None:
+            configure(app=self._app)
+
+        if _lru_tracker is not None:
+            try:
+                _lru_tracker.set_custom_data(lru_key, key, value)
+                return True
+            except Exception as e:
+                logger.error(f"Error setting custom data: {e}")
+                return False
+        return False
+
+    def get_custom_data(self, lru_key: str) -> Dict[str, Any]:
+        """Get custom data for an LRU key.
+
+        Args:
+            lru_key: The LRU key
+
+        Returns:
+            Dictionary of custom data (empty dict if none exists)
+        """
+        from celery_ranch.utils.prioritize import _lru_tracker
+
+        if _lru_tracker is None:
+            configure(app=self._app)
+
+        if _lru_tracker is not None:
+            try:
+                return _lru_tracker.get_custom_data(lru_key) or {}
+            except Exception as e:
+                logger.error(f"Error getting custom data: {e}")
+        return {}
 
     def get_client_metadata(self, lru_key: str) -> Dict[str, Any]:
         """Get metadata for an LRU client.
@@ -138,13 +183,12 @@ class LRUTask(Task):
         if _lru_tracker is None or _task_backlog is None:
             configure(app=self._app)
 
-        from celery_ranch.utils.prioritize import _lru_tracker, _task_backlog
-
         result = {
             "lru_key": lru_key,
             "weight": 1.0,
             "last_execution": None,
             "tags": None,
+            "custom_data": None,
             "pending_tasks": 0,
         }
 
@@ -154,6 +198,7 @@ class LRUTask(Task):
                 result["weight"] = metadata.weight
                 result["last_execution"] = metadata.timestamp
                 result["tags"] = metadata.tags
+                result["custom_data"] = metadata.custom_data
 
         if _task_backlog is not None:
             tasks = _task_backlog.get_tasks_by_lru_key(lru_key)
@@ -178,8 +223,6 @@ class LRUTask(Task):
         if _lru_tracker is None:
             configure(app=self._app)
 
-        from celery_ranch.utils.prioritize import _lru_tracker
-
         if _lru_tracker is not None:
             return _lru_tracker.get_keys_by_tag(tag_name, tag_value)
         return []
@@ -194,20 +237,25 @@ class LRUTask(Task):
 
 
 def lru_task(
-    app: Celery, config: Optional[Dict[str, Any]] = None, **options: Any
+    app: Celery,
+    config: Optional[Dict[str, Any]] = None,
+    weight_function: Optional[Callable[[str, LRUKeyMetadata], float]] = None,
+    **options: Any,
 ) -> Callable[[F], F]:
     """Decorator to create an LRU-aware task.
 
     Args:
         app: The Celery application instance
         config: Optional configuration dictionary for Celery Ranch
+        weight_function: Optional function for calculating dynamic priority weights
+                       Should take (lru_key, metadata) and return a float
         **options: Additional options to pass to the task decorator
 
     Returns:
         A decorator function that creates an LRU-aware task
     """
     # Initialize the LRU priority system with the app
-    configure(app=app, config=config)
+    configure(app=app, config=config, weight_function=weight_function)
 
     def decorator(func: F) -> F:
         task_options = options.copy()

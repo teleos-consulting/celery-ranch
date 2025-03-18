@@ -79,6 +79,40 @@ def test_add_tag(mock_lru_tracker, lru_task_instance):
     mock_lru_tracker.add_tag.side_effect = Exception("Failed to add tag")
     result = lru_task_instance.add_tag("client1", "invalid", "value")
     assert result is False
+    
+    
+@patch("celery_ranch.utils.prioritize._lru_tracker")
+def test_set_custom_data(mock_lru_tracker, lru_task_instance):
+    """Test set_custom_data method."""
+    # Setup mocks
+    mock_lru_tracker.set_custom_data.return_value = None
+    
+    # Test successful call
+    result = lru_task_instance.set_custom_data("client1", "bid", 10.5)
+    assert result is True
+    mock_lru_tracker.set_custom_data.assert_called_once_with("client1", "bid", 10.5)
+    
+    # Test with exception
+    mock_lru_tracker.set_custom_data.side_effect = Exception("Failed to set custom data")
+    result = lru_task_instance.set_custom_data("client1", "invalid", "value")
+    assert result is False
+
+
+@patch("celery_ranch.utils.prioritize._lru_tracker")
+def test_get_custom_data(mock_lru_tracker, lru_task_instance):
+    """Test get_custom_data method."""
+    # Setup mocks
+    mock_lru_tracker.get_custom_data.return_value = {"bid": 10.5, "tier": "premium"}
+    
+    # Test successful call
+    result = lru_task_instance.get_custom_data("client1")
+    assert result == {"bid": 10.5, "tier": "premium"}
+    mock_lru_tracker.get_custom_data.assert_called_once_with("client1")
+    
+    # Test with exception
+    mock_lru_tracker.get_custom_data.side_effect = Exception("Failed to get custom data")
+    result = lru_task_instance.get_custom_data("client1")
+    assert result == {}
 
 
 @patch("celery_ranch.utils.prioritize._lru_tracker")
@@ -90,6 +124,7 @@ def test_get_client_metadata(mock_task_backlog, mock_lru_tracker, lru_task_insta
     metadata.weight = 0.5
     metadata.timestamp = time.time()
     metadata.tags = {"region": "us-east", "tier": "premium"}
+    metadata.custom_data = {"bid": 10.5, "balance": 100.0}
     
     mock_lru_tracker.get_metadata.return_value = metadata
     mock_task_backlog.get_tasks_by_lru_key.return_value = {"task1": {}, "task2": {}}
@@ -102,6 +137,7 @@ def test_get_client_metadata(mock_task_backlog, mock_lru_tracker, lru_task_insta
     assert result["weight"] == 0.5
     assert result["last_execution"] == metadata.timestamp
     assert result["tags"] == metadata.tags
+    assert result["custom_data"] == metadata.custom_data
     assert result["pending_tasks"] == 2
     
     # Verify calls
