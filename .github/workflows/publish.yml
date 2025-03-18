@@ -1,8 +1,10 @@
-name: Publish to PyPI
+name: Publish Package
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main, master ]
+    tags:
+      - 'v*'
   release:
     types: [created]
 
@@ -29,7 +31,7 @@ jobs:
   deploy:
     needs: test
     runs-on: ubuntu-latest
-    if: github.event_name == 'release' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
+    if: github.event_name == 'release' || (github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')))
     steps:
     - uses: actions/checkout@v4
       with:
@@ -45,40 +47,52 @@ jobs:
         python -m pip install --upgrade pip
         pip install setuptools wheel twine build packaging
     
-    - name: Check version bump
-      if: github.event_name == 'push'
-      id: check_version
+    - name: Extract version
+      id: extract_version
       run: |
-        # Get the current version from setup.py
-        CURRENT_VERSION=$(python -c "from setuptools import setup; setup()" --version 2>/dev/null)
-        echo "Current version: $CURRENT_VERSION"
-        
-        # Get the latest published version from PyPI
-        LATEST_VERSION=$(python -c "import json, urllib.request; print(json.loads(urllib.request.urlopen('https://pypi.org/pypi/ranch/json').read())['info']['version'])")
-        echo "Latest published version: $LATEST_VERSION"
-        
-        # Compare versions using packaging
-        python -c "from packaging import version; current=version.parse('$CURRENT_VERSION'); latest=version.parse('$LATEST_VERSION'); exit(0 if current > latest else 1)" && SHOULD_PUBLISH=true || SHOULD_PUBLISH=false
-        echo "Should publish: $SHOULD_PUBLISH"
-        
-        echo "should_publish=$SHOULD_PUBLISH" >> $GITHUB_OUTPUT
+        if [[ $GITHUB_REF == refs/tags/v* ]]; then
+          TAG=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$TAG" >> $GITHUB_OUTPUT
+          echo "Tag version: $TAG"
+        else
+          VERSION=$(python -c "from setuptools import setup; setup()" --version 2>/dev/null)
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Package version: $VERSION"
+        fi
     
     - name: Build and package
       run: |
         python -m build
     
+    - name: Create GitHub Release
+      id: create_release
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          dist/*.whl
+          dist/*.tar.gz
+        name: Release ${{ steps.extract_version.outputs.VERSION }}
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+    
     - name: Publish to PyPI for releases
-      if: github.event_name == 'release'
+      if: (github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v')) && env.PYPI_ENABLED == 'true'
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
         skip_existing: true
+      env:
+        PYPI_ENABLED: ${{ secrets.PYPI_ENABLED || 'false' }}
     
     - name: Publish to PyPI for version bumps
-      if: github.event_name == 'push' && steps.check_version.outputs.should_publish == 'true'
+      if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/v') && env.PYPI_ENABLED == 'true'
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
         skip_existing: true
+      env:
+        PYPI_ENABLED: ${{ secrets.PYPI_ENABLED || 'false' }}

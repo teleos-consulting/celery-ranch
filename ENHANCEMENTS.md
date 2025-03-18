@@ -2,6 +2,56 @@
 
 This document summarizes the enhancements made to the Ranch library to improve its reliability, performance, and feature set.
 
+## GitHub Installation Support
+
+While PyPI registrations are temporarily unavailable, we've added support for installing the package directly from GitHub.
+
+### Installation Methods
+
+#### Basic Installation
+```bash
+pip install git+https://github.com/teleos-consulting/celery-ranch.git
+```
+
+#### Version-specific Installation
+```bash
+pip install git+https://github.com/teleos-consulting/celery-ranch.git@v0.1.0
+```
+
+#### Installation with Redis Support
+```bash
+pip install "git+https://github.com/teleos-consulting/celery-ranch.git#egg=celery-ranch[redis]"
+```
+
+### GitHub Release Automation
+
+We've enhanced our GitHub Actions workflows to:
+
+1. Automatically create GitHub Releases when version tags are pushed
+2. Attach built package distributions to GitHub Releases
+3. Conditionally publish to PyPI (when it becomes available again)
+4. Support tag-based versioning
+
+### How to Tag a Version
+
+To create a new release:
+
+```bash
+# Ensure changes are committed to main/master
+git checkout main
+git pull
+
+# Create and push a version tag
+git tag v0.1.1
+git push origin v0.1.1
+```
+
+This will trigger the GitHub Actions workflow to:
+1. Run tests
+2. Build package distributions
+3. Create a GitHub Release with attached distributions
+4. (Conditionally) Publish to PyPI if PYPI_ENABLED secret is set to 'true'
+
 ## Implemented Enhancements
 
 ### 1. Redis Connection Handling

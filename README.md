@@ -12,13 +12,24 @@ A Python extension library for Celery that provides fair task scheduling using L
 ## Installation
 
 ```bash
+# Install from PyPI (currently unavailable)
 pip install celery-ranch
+
+# Install directly from GitHub
+pip install git+https://github.com/teleos-consulting/celery-ranch.git
+
+# Install a specific version from GitHub
+pip install git+https://github.com/teleos-consulting/celery-ranch.git@v0.1.0
 ```
 
 For production use with Redis storage:
 
 ```bash
+# From PyPI (currently unavailable)
 pip install celery-ranch[redis]
+
+# From GitHub
+pip install "git+https://github.com/teleos-consulting/celery-ranch.git#egg=celery-ranch[redis]"
 ```
 
 ## Key Features
