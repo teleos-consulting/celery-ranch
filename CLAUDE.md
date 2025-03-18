@@ -217,6 +217,40 @@ twine check dist/*         # Verify package quality
 - Test with multiple concurrent clients to ensure fair scheduling
 - Consider implementing custom prioritization strategies for specific requirements
 
+## Pull Request Preparation Checklist
+
+Before creating a pull request, run this comprehensive checklist to ensure code quality:
+
+```bash
+# 1. Run linting across ALL files (not just modified ones)
+flake8
+
+# 2. Run type checking across the entire codebase
+mypy .
+
+# 3. Run test suite with coverage
+pytest --cov=celery_ranch --cov-report=term-missing
+
+# 4. Verify import formatting
+isort --check .
+
+# 5. Check code formatting
+black --check .
+
+# 6. Apply any required formatting fixes
+isort .
+black .
+
+# 7. Run pylint on key packages
+pylint celery_ranch
+pylint ranch
+
+# 8. Final verification
+flake8
+```
+
+Always run the full linting and type checking before pushing code for review.
+
 ## Feature Branch and Issue Management
 
 - Always check issue details completely before starting work:

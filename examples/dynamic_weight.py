@@ -6,7 +6,8 @@ This example shows how to:
 2. Store custom data for each client
 3. Use the custom data in the weight function to determine priority
 
-The example simulates a bidding system where clients with higher bids get higher priority.
+The example simulates a bidding system where clients with higher bids get
+higher priority.
 
 To run this example:
 1. Start a Redis server
@@ -19,7 +20,6 @@ To run this example:
 import random
 import time
 from datetime import datetime
-from typing import Dict, Any
 
 from celery import Celery
 
@@ -45,21 +45,21 @@ app.conf.celery_ranch = {
 def bid_based_priority(lru_key: str, metadata: LRUKeyMetadata) -> float:
     """
     Calculate priority based on bid value in custom data.
-    
+
     Lower weight = higher priority, so we return 1.0 / bid_value.
     For example, a bid of 10 would result in a priority weight of 0.1.
     """
     # Default weight
     if not metadata.custom_data or "bid" not in metadata.custom_data:
         return 1.0
-    
+
     # Get the bid value
     bid = metadata.custom_data.get("bid", 1.0)
-    
+
     # Ensure bid is positive
     if bid <= 0:
         return 1.0
-        
+
     # Return inverted bid (lower weight = higher priority)
     return 1.0 / bid
 
