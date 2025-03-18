@@ -158,6 +158,18 @@ twine check dist/*         # Verify package quality
 - Test edge cases explicitly (empty inputs, max values, etc.)
 - Add regression tests when fixing bugs
 
+### Test Best Practices
+
+- Focus on testing functionality, not implementation details
+- Never reference specific line numbers in test comments as code changes frequently
+- Write test comments that describe the functionality or edge case being tested
+- Tests should be understandable even if the implementation changes
+- Focus on behaviors and boundary conditions rather than code paths
+- Group related test cases together for better organization
+- Test behavior, not code coverage - if specific code paths are hard to test, consider refactoring
+- Each test should assert one conceptual behavior for easier debugging
+- Tests that explicitly track test coverage should be avoided; coverage is a byproduct of good tests
+
 ### Test Mocking Best Practices
 
 - Mock time-dependent functions (use `patch('time.time')` with fixed return values)
