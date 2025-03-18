@@ -1,5 +1,45 @@
 # Celery Ranch Development Standards and Guidelines
 
+## GitHub Workflow
+
+Before starting work on any feature or bug fix:
+
+1. Check for existing remote branches and GitHub issues:
+   ```bash
+   # List all remote branches
+   git fetch --all
+   git branch -r
+
+   # Fetch latest GitHub issues and their status
+   gh issue list --limit 50
+   
+   # Get detailed info about a specific issue
+   gh issue view ISSUE_NUMBER
+   ```
+
+2. Check if a branch already exists for your task:
+   ```bash
+   # Search for branches containing keywords
+   git branch -r | grep -i "keyword"
+   
+   # Check if branch exists on remote
+   git ls-remote --heads origin branch-name
+   ```
+
+3. Check related pull requests:
+   ```bash
+   # List open pull requests
+   gh pr list
+   
+   # Check if PRs exist for an issue
+   gh pr list --search "issue:#ISSUE_NUMBER"
+   ```
+
+4. Create a new branch with a descriptive name if needed:
+   ```bash
+   git checkout -b feature/issue-number-short-description
+   ```
+
 ## Local Development Workflow
 
 To minimize GitHub Actions time consumption and avoid failed CI builds, follow this local workflow before pushing changes:
@@ -176,6 +216,57 @@ twine check dist/*         # Verify package quality
 - Use Redis for backlog storage in production
 - Test with multiple concurrent clients to ensure fair scheduling
 - Consider implementing custom prioritization strategies for specific requirements
+
+## Feature Branch and Issue Management
+
+- Always check issue details completely before starting work:
+  ```bash
+  # Get full details about the issue
+  gh issue view ISSUE_NUMBER --comments
+  ```
+
+- When selecting a branch name, use a consistent prefix pattern:
+  - `feature/issue-XX-short-name` for new features
+  - `bugfix/issue-XX-short-name` for bug fixes 
+  - `docs/issue-XX-short-name` for documentation updates
+  - `refactor/issue-XX-short-name` for code refactoring
+
+- Check if work already exists before starting:
+  ```bash
+  # Check if anyone is working on the issue
+  gh issue view ISSUE_NUMBER --json assignees
+  
+  # Check for related branches
+  git fetch --all
+  git branch -r | grep -i "issue-XX"
+  ```
+
+- Always pull latest changes before starting work:
+  ```bash
+  git checkout master
+  git pull
+  git checkout -b feature/issue-XX-short-name
+  ```
+
+- When returning to a branch after time away:
+  ```bash
+  # Update remote branches and rebase your work
+  git fetch --all
+  git checkout your-branch-name
+  git rebase origin/master
+  ```
+
+- Check if anyone else has modified your branch:
+  ```bash
+  git fetch
+  git log HEAD..origin/your-branch-name
+  ```
+
+- Regularly sync with the main branch to avoid merge conflicts:
+  ```bash
+  git checkout your-branch-name
+  git rebase origin/master
+  ```
 
 ## CI/CD Pipeline Optimization
 
