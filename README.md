@@ -7,7 +7,7 @@
 [![Celery 5.3.4+](https://img.shields.io/badge/celery-5.3.4+-green.svg)](https://docs.celeryproject.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A Python extension library for Celery that provides fair task scheduling using LRU (Least Recently Used) prioritization with additional features like weighted priority, task expiry, and client tagging.
+A Python extension library for Celery that provides fair task scheduling using LRU (Least Recently Used) prioritization. Designed to prevent high-volume bulk processes from monopolizing resources while ensuring fair access for all task sources - whether they're from bulk operations, user interactions, scheduled jobs, or critical on-demand processes.
 
 ## Installation
 
@@ -23,16 +23,16 @@ pip install celery-ranch[redis]
 
 ## Key Features
 
-- Fair task distribution among multiple clients
-- LRU-based prioritization of tasks
-- Weighted priority for different client importance levels
-- Custom dynamic weight functions for advanced prioritization strategies
-- Task expiry to prevent stale tasks from consuming resources
-- Client tagging for organization and filtering
-- Seamless integration with existing Celery applications
-- No monopolization of resources by high-volume clients
-- Robust Redis connection handling with retry logic and TLS support
-- Configurable serialization options (pickle/JSON)
+- **Fair Resource Distribution**: Ensures equitable task execution across different processes
+- **LRU-based Prioritization**: Automatically prioritizes less recently served task sources
+- **Weighted Priority System**: Assign different priority levels to various process types
+- **Custom Weight Functions**: Define advanced prioritization logic based on your specific needs
+- **Task Expiry Management**: Prevent stale tasks from consuming valuable resources
+- **Process Tagging**: Organize and filter task sources with customizable tags
+- **Seamless Celery Integration**: Works with your existing Celery applications without major changes
+- **Resource Protection**: Prevents high-volume batch processes from overwhelming your workers
+- **Robust Redis Connectivity**: Reliable connection handling with retry logic and TLS support
+- **Flexible Serialization**: Choose between serialization options (pickle/JSON) based on your needs
 
 ## Basic Usage
 
@@ -47,21 +47,31 @@ def process_data(data):
     # Process data
     return result
 
-# Using LRU prioritization - "client_id" is the LRU key
-result = process_data.lru_delay("client_id", data_to_process)
+# Using LRU prioritization with a process identifier as the LRU key
+result = process_data.lru_delay("bulk_batch_job", data_to_process)
 ```
+
+## Common Use Cases
+
+- **Batch Jobs vs. Interactive Requests**: Prevent long-running ETL or reporting jobs from blocking user-initiated tasks
+- **Background Tasks vs. User Operations**: Balance background maintenance with interactive user operations
+- **Scheduled Tasks vs. On-Demand Operations**: Ensure critical on-demand processes aren't starved by scheduled tasks
+- **Internal vs. External Requests**: Prioritize customer-facing operations over internal administrative tasks
+- **Different Service Tiers**: Give higher priority to premium features while ensuring basic functionality remains responsive
 
 ## Advanced Usage
 
 ### Weighted Priority
 
 ```python
-# Set client priority (0.5 = 2x priority, 2.0 = 0.5x priority)
-process_data.set_priority_weight("premium_client", 0.5)
+# Set priority weights for different process types (lower value = higher priority)
+# 0.5 = 2x priority, 2.0 = 0.5x priority
+process_data.set_priority_weight("critical_process", 0.5)  # High priority
+process_data.set_priority_weight("background_job", 2.0)    # Low priority
 
 # Submit task with priority and expiry
 result = process_data.lru_delay(
-    "premium_client",         # LRU key
+    "critical_process",       # LRU key (process identifier)
     data_to_process,          # Task argument
     priority_weight=0.5,      # Priority weight
     expiry=1800               # Expires after 30 minutes
@@ -73,46 +83,47 @@ result = process_data.lru_delay(
 ```python
 from celery_ranch.utils.lru_tracker import LRUKeyMetadata
 
-# Define a custom weight function
-def bid_based_priority(lru_key: str, metadata: LRUKeyMetadata) -> float:
-    """Calculate priority based on bid value in custom data."""
+# Define a custom weight function based on process characteristics
+def resource_based_priority(lru_key: str, metadata: LRUKeyMetadata) -> float:
+    """Calculate priority based on resource requirements in metadata."""
     # Default weight if no custom data
-    if not metadata.custom_data or "bid" not in metadata.custom_data:
+    if not metadata.custom_data or "resource_impact" not in metadata.custom_data:
         return 1.0
     
-    # Get bid value and return inverted weight (lower = higher priority)
-    bid = metadata.custom_data.get("bid", 1.0)
-    return 1.0 / max(bid, 0.01)  # Ensure positive weight
+    # Higher resource impact = lower priority (higher weight)
+    impact = metadata.custom_data.get("resource_impact", 1.0)
+    return max(impact, 0.1)  # Ensure positive weight
 
 # Create task with custom weight function
-@lru_task(app, weight_function=bid_based_priority)
+@lru_task(app, weight_function=resource_based_priority)
 def process_data(data):
     # Process data
     return result
 
-# Store custom data for clients
-process_data.set_custom_data("client1", "bid", 10.0)  # Higher bid = higher priority
+# Store custom metadata for different processes
+process_data.set_custom_data("data_mining_job", "resource_impact", 3.0)  # High impact, lower priority
+process_data.set_custom_data("user_report", "resource_impact", 0.5)      # Low impact, higher priority
 ```
 
-### Client Organization with Tags
+### Process Organization with Tags
 
 ```python
-# Add tags to clients for organization
-process_data.add_tag("client1", "region", "us-west")
-process_data.add_tag("client2", "region", "us-east")
-process_data.add_tag("client1", "tier", "premium")
+# Add tags to categorize different process types
+process_data.add_tag("daily_batch", "category", "maintenance")
+process_data.add_tag("user_import", "category", "data-ingestion")
+process_data.add_tag("user_report", "importance", "critical")
 
-# Find clients by tag
-premium_clients = process_data.get_tagged_clients("tier", "premium")
+# Find processes by tag
+critical_processes = process_data.get_tagged_clients("importance", "critical")
 ```
 
 ### Monitoring
 
 ```python
-# Get client information
-client_info = process_data.get_client_metadata("client_id")
-print(f"Client priority: {client_info['weight']}")
-print(f"Pending tasks: {client_info['pending_tasks']}")
+# Get process information
+process_info = process_data.get_client_metadata("batch_job_id")
+print(f"Process priority: {process_info['weight']}")
+print(f"Pending tasks: {process_info['pending_tasks']}")
 
 # Get system status
 status = process_data.get_system_status()
@@ -121,12 +132,22 @@ print(f"Backlog size: {status['backlog_size']}")
 
 ## How It Works
 
-The library works by:
-1. Intercepting task calls via the `lru_delay()` method
-2. Placing the original task in a backlog
-3. Creating a prioritization task in a dedicated queue
-4. Using a worker to select the highest priority task based on weighted LRU history
-5. Executing the selected task and updating the LRU tracking
+Celery Ranch implements a fair scheduling mechanism that works as follows:
+
+1. **Task Interception**: When you call `lru_delay()`, the task doesn't go directly to Celery
+2. **Backlog Management**: The task is stored in a backlog, associated with its LRU key (process identifier)
+3. **Prioritization Queue**: A lightweight prioritization task is placed in a dedicated queue
+4. **Fair Selection**: When a worker processes this task, it:
+   - Analyzes all pending processes in the backlog
+   - Selects the least recently used process (modified by priority weights)
+   - Picks one task from that process's backlog
+5. **Execution & Tracking**: The selected task is executed and the LRU timestamp is updated
+
+This approach ensures that:
+- No single process can monopolize workers, regardless of submission volume
+- Critical processes can still get prioritized with appropriate weights
+- All processes get fair access to computing resources
+- The system naturally adapts to changing workloads
 
 ## Development and Contribution
 
