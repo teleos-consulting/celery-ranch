@@ -447,13 +447,25 @@ class CustomStorageBackend(StorageBackend):
     def get(self, key):
         """Get a value by key."""
         return {}
+        
+    def batch_get(self, keys):
+        """Get multiple values by keys in a single operation."""
+        return {}
     
     def set(self, key, value, expiry=None):
         """Set a key-value pair."""
         pass
+        
+    def batch_set(self, key_value_dict, expiry=None):
+        """Set multiple key-value pairs in a single operation."""
+        pass
     
     def delete(self, key):
         """Delete a key."""
+        pass
+        
+    def batch_delete(self, keys):
+        """Delete multiple keys in a single operation."""
         pass
     
     def get_all_keys(self):

@@ -94,7 +94,16 @@ def test_storage_backend_abstract_methods():
         def get(self, key):
             return None
             
+        def batch_get(self, keys):
+            return {}
+            
+        def batch_set(self, key_value_dict, expiry=None):
+            pass
+            
         def delete(self, key):
+            pass
+            
+        def batch_delete(self, keys):
             pass
             
         def get_all_keys(self):
@@ -110,6 +119,9 @@ def test_storage_backend_abstract_methods():
     storage.set("key", "value")
     assert storage.get("key") is None
     storage.delete("key")
+    storage.batch_get(["key1", "key2"])
+    storage.batch_set({"key1": "value1", "key2": "value2"})
+    storage.batch_delete(["key1", "key2"])
     assert storage.get_all_keys() == []
     assert storage.get_keys_by_prefix("prefix") == []
 
@@ -151,6 +163,31 @@ def test_in_memory_storage_methods():
     # Test get_keys_by_prefix with no matches
     empty_prefix_keys = storage.get_keys_by_prefix("nonexistent_prefix_")
     assert empty_prefix_keys == []
+    
+    # Test batch operations
+    
+    # Test batch_get
+    batch_result = storage.batch_get(["key2", "key3", "nonexistent"])
+    assert len(batch_result) == 2
+    assert batch_result["key2"] == "value2"
+    assert batch_result["key3"] == "value3"
+    assert "nonexistent" not in batch_result
+    
+    # Test batch_set
+    storage.batch_set({
+        "batch_key1": "batch_value1",
+        "batch_key2": "batch_value2",
+        "batch_key3": "batch_value3"
+    }, expiry=60)  # expiry ignored in InMemoryStorage
+    assert storage.get("batch_key1") == "batch_value1"
+    assert storage.get("batch_key2") == "batch_value2"
+    assert storage.get("batch_key3") == "batch_value3"
+    
+    # Test batch_delete
+    storage.batch_delete(["batch_key1", "batch_key2", "nonexistent"])
+    assert storage.get("batch_key1") is None
+    assert storage.get("batch_key2") is None
+    assert storage.get("batch_key3") == "batch_value3"
 
 
 def test_in_memory_storage_reset():
@@ -535,6 +572,137 @@ def test_redis_storage_get_keys_empty(mock_redis):
     # Test get_all_keys
     all_keys = storage.get_all_keys()
     assert all_keys == []
+
+
+@patch("redis.Redis")
+def test_redis_storage_batch_operations(mock_redis):
+    """Test Redis batch operations."""
+    # Setup mock
+    redis_client = MagicMock()
+    
+    # Create storage
+    storage = RedisStorage(redis_client=redis_client)
+    
+    # Test batch_get
+    mock_mget = MagicMock()
+    redis_client.mget = mock_mget
+    
+    # Mock successful mget with mixed results (some keys exist, some don't)
+    mock_mget.return_value = [
+        pickle.dumps("value1"),
+        None,
+        pickle.dumps("value3")
+    ]
+    
+    # Test batch_get
+    result = storage.batch_get(["key1", "key2", "key3"])
+    assert len(result) == 2
+    assert result["key1"] == "value1"
+    assert "key2" not in result
+    assert result["key3"] == "value3"
+    mock_mget.assert_called_once_with(["ranch:key1", "ranch:key2", "ranch:key3"])
+    
+    # Test batch_set with pipeline
+    mock_pipeline = MagicMock()
+    mock_mset = MagicMock()
+    mock_execute = MagicMock()
+    
+    redis_client.pipeline.return_value.__enter__.return_value = mock_pipeline
+    mock_pipeline.mset = mock_mset
+    mock_pipeline.execute = mock_execute
+    
+    # Test batch_set without expiry
+    storage.batch_set({
+        "batch_key1": "batch_value1",
+        "batch_key2": "batch_value2"
+    })
+    
+    mock_mset.assert_called_once()
+    mock_execute.assert_called_once()
+    
+    # Reset mocks
+    mock_pipeline.reset_mock()
+    mock_mset.reset_mock()
+    mock_execute.reset_mock()
+    
+    # Test batch_set with expiry
+    storage.batch_set({
+        "batch_key3": "batch_value3",
+        "batch_key4": "batch_value4"
+    }, expiry=60)
+    
+    # Should set values and expiry
+    mock_mset.assert_called_once()
+    assert mock_pipeline.expire.call_count == 2
+    mock_execute.assert_called_once()
+    
+    # Test batch_delete
+    mock_delete = MagicMock()
+    redis_client.delete = mock_delete
+    
+    storage.batch_delete(["delete_key1", "delete_key2"])
+    
+    # Should call delete with all keys
+    mock_delete.assert_called_once_with("ranch:delete_key1", "ranch:delete_key2")
+    
+    # Test empty batches
+    mock_mget.reset_mock()
+    mock_pipeline.reset_mock()
+    mock_delete.reset_mock()
+    
+    # Empty batch_get
+    result = storage.batch_get([])
+    assert result == {}
+    mock_mget.assert_not_called()
+    
+    # Empty batch_set
+    storage.batch_set({})
+    mock_pipeline.mset.assert_not_called()
+    
+    # Empty batch_delete
+    storage.batch_delete([])
+    mock_delete.assert_not_called()
+
+
+@patch("redis.Redis")
+def test_redis_storage_batch_operations_error_handling(mock_redis):
+    """Test error handling in Redis batch operations."""
+    # Setup mock
+    redis_client = MagicMock()
+    
+    # Create storage with minimal retries
+    storage = RedisStorage(redis_client=redis_client, max_retries=2)
+    
+    # Test batch_get error
+    redis_client.mget.side_effect = ConnectionError("Redis connection error")
+    
+    with pytest.raises(ConnectionError):
+        storage.batch_get(["key1", "key2"])
+    
+    # There should be retries
+    assert redis_client.mget.call_count > 1
+    redis_client.mget.reset_mock()
+    
+    # Test batch_set error
+    mock_pipeline = MagicMock()
+    redis_client.pipeline.return_value.__enter__.return_value = mock_pipeline
+    mock_pipeline.execute.side_effect = ConnectionError("Redis connection error")
+    
+    with pytest.raises(ConnectionError):
+        storage.batch_set({"key1": "value1", "key2": "value2"})
+    
+    # There should be retries
+    assert mock_pipeline.execute.call_count > 1
+    mock_pipeline.execute.reset_mock()
+    
+    # Test batch_delete error
+    redis_client.delete.side_effect = ConnectionError("Redis connection error")
+    
+    with pytest.raises(ConnectionError):
+        storage.batch_delete(["key1", "key2"])
+    
+    # There should be retries
+    assert redis_client.delete.call_count > 1
 
 
 @patch("redis.Redis")

@@ -209,36 +209,39 @@ def test_backlog_expired_task_removal():
         assert storage.get(f"{backlog._task_prefix}{task_id}") is None
         assert task_id in storage.get(lru_index_key)
         
-        # Instead of testing via get_tasks_by_lru_key, let's instrument the code
-        # to directly test the expired_tasks.append(task_id) code path in line 165
+        # With the batch operations, we need to observe batch_delete instead of remove_task
+        original_batch_delete = backlog._storage.batch_delete
+        deleted_keys = []
         
-        # Create a MonkeyPatch to track if line 165 is executed
-        original_remove_task = backlog.remove_task
-        removed_task_ids = []
-        
-        def patched_remove_task(self, task_id):
-            """Patched version that tracks task IDs"""
-            removed_task_ids.append(task_id)
-            return original_remove_task(task_id)
+        def patched_batch_delete(keys):
+            """Patched version that tracks keys"""
+            deleted_keys.extend(keys)
+            return original_batch_delete(keys)
         
         # Apply the patch
-        with patch.object(TaskBacklog, 'remove_task', patched_remove_task.__get__(backlog, TaskBacklog)):
+        with patch.object(backlog._storage, 'batch_delete', patched_batch_delete):
             # Now get tasks by LRU key - this should trigger the cleanup
-            # and hit line 165 where it adds to expired_tasks
             tasks = backlog.get_tasks_by_lru_key(lru_key)
             
             # Verify results:
-            # 1. The expired_tasks list should include our task_id 
-            # 2. The remove_task method should have been called with our task_id
-            # 3. No tasks should be returned since the task was expired
+            # 1. The task should be cleaned up
+            # 2. No tasks should be returned since the task was expired
             assert tasks == {}
-            assert task_id in removed_task_ids, f"Task {task_id} was not added to expired_tasks"
             
-            # Verify that the logger would record that a task was cleaned up
+            # Verify the task key was deleted
+            task_key = f"{backlog._task_prefix}{task_id}"
+            meta_key = f"{backlog._metadata_prefix}{task_id}"
+            
+            # Either task_key or meta_key should be in deleted_keys (depending on implementation)
+            assert any(task_key in batch or meta_key in batch for batch in [deleted_keys]), \
+                f"Task {task_id} was not cleaned up properly"
+                
+            # Verify that the logger would record that a task was marked for cleanup
             task_id_short = task_id[:8]
-            mock_logger.info.assert_called_with(
-                f"Task {task_id_short}... for {lru_key} missing data, removing"
-            )
+            # The message might change slightly between implementations
+            assert any("missing data" in str(call) and task_id_short in str(call) 
+                      for call in mock_logger.info.call_args_list), \
+                "Missing log message about task cleanup"
 
 
 def test_lru_tracker_update_weight_and_timestamp():

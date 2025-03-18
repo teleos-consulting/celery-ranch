@@ -66,13 +66,46 @@ class StorageBackend(ABC):
         pass
 
     @abstractmethod
+    def batch_get(self, keys: List[str]) -> Dict[str, Any]:
+        """Get multiple values by keys in a single operation.
+
+        Args:
+            keys: List of keys to fetch
+
+        Returns:
+            Dictionary mapping keys to their values (only includes keys that exist)
+        """
+        pass
+
+    @abstractmethod
     def set(self, key: str, value: Any, expiry: Optional[int] = None) -> None:
         """Set a value for a key."""
         pass
 
     @abstractmethod
+    def batch_set(
+        self, key_value_dict: Dict[str, Any], expiry: Optional[int] = None
+    ) -> None:
+        """Set multiple key-value pairs in a single operation.
+
+        Args:
+            key_value_dict: Dictionary mapping keys to values
+            expiry: Optional expiry time in seconds
+        """
+        pass
+
+    @abstractmethod
     def delete(self, key: str) -> None:
         """Delete a key."""
+        pass
+
+    @abstractmethod
+    def batch_delete(self, keys: List[str]) -> None:
+        """Delete multiple keys in a single operation.
+
+        Args:
+            keys: List of keys to delete
+        """
         pass
 
     @abstractmethod
@@ -96,6 +129,21 @@ class InMemoryStorage(StorageBackend):
         """Get a value by key."""
         return self._data.get(key)
 
+    def batch_get(self, keys: List[str]) -> Dict[str, Any]:
+        """Get multiple values by keys in a single operation.
+
+        Args:
+            keys: List of keys to fetch
+
+        Returns:
+            Dictionary mapping keys to their values
+        """
+        result = {}
+        for key in keys:
+            if key in self._data:
+                result[key] = self._data[key]
+        return result
+
     def set(self, key: str, value: Any, expiry: Optional[int] = None) -> None:
         """Set a value for a key.
 
@@ -106,10 +154,32 @@ class InMemoryStorage(StorageBackend):
         """
         self._data[key] = value
 
+    def batch_set(
+        self, key_value_dict: Dict[str, Any], expiry: Optional[int] = None
+    ) -> None:
+        """Set multiple key-value pairs in a single operation.
+
+        Args:
+            key_value_dict: Dictionary mapping keys to values
+            expiry: Optional expiry time in seconds (ignored in memory storage)
+        """
+        for key, value in key_value_dict.items():
+            self._data[key] = value
+
     def delete(self, key: str) -> None:
         """Delete a key."""
         if key in self._data:
             del self._data[key]
+
+    def batch_delete(self, keys: List[str]) -> None:
+        """Delete multiple keys in a single operation.
+
+        Args:
+            keys: List of keys to delete
+        """
+        for key in keys:
+            if key in self._data:
+                del self._data[key]
 
     def get_all_keys(self) -> List[str]:
         """Get all keys in the storage."""
@@ -131,7 +201,7 @@ class RedisStorage(StorageBackend):
     """Redis-based storage implementation for production use.
 
     Supports connection retry with exponential backoff, health checking,
-    and optional serializer choice.
+    optional serializer choice, and batch operations for improved performance.
     """
 
     def __init__(
@@ -198,6 +268,41 @@ class RedisStorage(StorageBackend):
             raise
 
     @retry_on_error(exceptions=(Exception,))
+    def batch_get(self, keys: List[str]) -> Dict[str, Any]:
+        """Get multiple values by keys in a single operation.
+
+        Uses Redis MGET command for efficient batch retrieval.
+
+        Args:
+            keys: List of keys to fetch
+
+        Returns:
+            Dictionary mapping keys to their values
+        """
+        if not keys:
+            return {}
+
+        try:
+            # Convert keys to Redis format
+            redis_keys = [self._make_key(key) for key in keys]
+
+            # Use MGET for efficient batch retrieval
+            values = self._redis.mget(redis_keys)
+
+            # Create result dictionary, filtering out None values
+            result = {}
+            for i, value in enumerate(values):
+                if value is not None:
+                    # Convert back to original key and deserialize value
+                    original_key = keys[i]
+                    result[original_key] = self._deserialize(value)
+
+            return result
+        except Exception as e:
+            logger.error(f"Error batch retrieving {len(keys)} keys: {e}")
+            raise
+
+    @retry_on_error(exceptions=(Exception,))
     def set(self, key: str, value: Any, expiry: Optional[int] = None) -> None:
         """Set a value for a key.
 
@@ -226,6 +331,67 @@ class RedisStorage(StorageBackend):
             self._redis.delete(self._make_key(key))
         except Exception as e:
             logger.error(f"Error deleting key {key}: {e}")
+            raise
+
+    @retry_on_error(exceptions=(Exception,))
+    def batch_set(
+        self, key_value_dict: Dict[str, Any], expiry: Optional[int] = None
+    ) -> None:
+        """Set multiple key-value pairs in a single operation.
+
+        Uses Redis pipeline for efficient batch updates.
+
+        Args:
+            key_value_dict: Dictionary mapping keys to values
+            expiry: Optional expiry time in seconds
+        """
+        if not key_value_dict:
+            return
+
+        try:
+            # Serialize values and add prefix to keys
+            prefixed_dict = {
+                self._make_key(key): self._serialize(value)
+                for key, value in key_value_dict.items()
+            }
+
+            # Use Redis pipeline to set multiple values with expiry if needed
+            with self._redis.pipeline() as pipe:
+                # Use MSET for the key-value pairs
+                pipe.mset(prefixed_dict)
+
+                # Set expiry for each key if needed
+                ttl = expiry if expiry is not None else self._default_ttl
+                if ttl:
+                    for key in key_value_dict:
+                        pipe.expire(self._make_key(key), ttl)
+
+                pipe.execute()
+        except Exception as e:
+            logger.error(f"Error batch setting {len(key_value_dict)} keys: {e}")
+            raise
+
+    @retry_on_error(exceptions=(Exception,))
+    def batch_delete(self, keys: List[str]) -> None:
+        """Delete multiple keys in a single operation.
+
+        Uses Redis DEL command with multiple keys for efficiency.
+
+        Args:
+            keys: List of keys to delete
+        """
+        if not keys:
+            return
+
+        try:
+            # Convert keys to Redis format
+            redis_keys = [self._make_key(key) for key in keys]
+
+            # Delete all keys in a single operation
+            if redis_keys:
+                self._redis.delete(*redis_keys)
+        except Exception as e:
+            logger.error(f"Error batch deleting {len(keys)} keys: {e}")
             raise
 
     @retry_on_error(exceptions=(Exception,))
