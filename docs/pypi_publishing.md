@@ -1,8 +1,23 @@
-# Publishing Ranch to PyPI
+# Publishing Ranch to PyPI or GitHub
 
-This document provides instructions for publishing the Ranch package to the Python Package Index (PyPI).
+This document provides instructions for publishing the Ranch package to the Python Package Index (PyPI) or making it installable from GitHub.
 
-## Prerequisites
+## Installation from GitHub
+
+While PyPI registrations are temporarily unavailable, you can install the package directly from GitHub using pip:
+
+```bash
+# Install the latest version
+pip install git+https://github.com/teleos-consulting/celery-ranch.git
+
+# Install a specific version by tag
+pip install git+https://github.com/teleos-consulting/celery-ranch.git@v0.1.0
+
+# Install with Redis support
+pip install "git+https://github.com/teleos-consulting/celery-ranch.git#egg=celery-ranch[redis]"
+```
+
+## Prerequisites for PyPI Publishing
 
 1. You need an account on [PyPI](https://pypi.org/) and/or [TestPyPI](https://test.pypi.org/)
 2. Generate API tokens from your PyPI/TestPyPI account settings
