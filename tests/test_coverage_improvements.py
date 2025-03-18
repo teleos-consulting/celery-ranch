@@ -235,8 +235,9 @@ def test_backlog_expired_task_removal():
             assert task_id in removed_task_ids, f"Task {task_id} was not added to expired_tasks"
             
             # Verify that the logger would record that a task was cleaned up
+            task_id_short = task_id[:8]
             mock_logger.info.assert_called_with(
-                f"Task {task_id} in LRU index for {lru_key} is missing data, removing"
+                f"Task {task_id_short}... for {lru_key} missing data, removing"
             )
 
 
