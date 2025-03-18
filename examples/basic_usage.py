@@ -1,5 +1,8 @@
 """
-Basic example showing how to use celery-ranch.
+Basic example showing how to use celery-ranch for fair task scheduling.
+
+This example demonstrates how Celery Ranch prevents high-volume bulk processes 
+from monopolizing your task queue, ensuring all processes get fair access to resources.
 
 To run this example:
 1. Start a Redis server
@@ -24,7 +27,7 @@ app = Celery(
 )
 
 
-# Define some LRU-aware tasks
+# Define an LRU-aware task
 @lru_task(app)
 def process_data(data):
     """Simulate processing some data"""
@@ -36,27 +39,43 @@ def process_data(data):
     return f"Processed: {data}"
 
 
-def simulate_clients(client_count=3, tasks_per_client=5):
-    """Simulate multiple clients submitting tasks"""
-    for i in range(tasks_per_client):
-        # Each client submits a task - clients with more frequent requests
-        # won't monopolize the worker
-        for client_id in range(client_count):
-            # The LRU key is the client ID
-            process_data.lru_delay(
-                f"client_{client_id}", f"Task {i} from client {client_id}"
-            )
+def simulate_competing_processes():
+    """
+    Simulate different types of processes competing for worker resources:
+    - bulk_batch: High-volume batch job that tries to submit many tasks quickly
+    - user_request: Interactive user requests that happen less frequently
+    - background_job: Regular background jobs that run periodically
+    """
+    # Define our different process types
+    processes = {
+        "bulk_batch": {"count": 15, "delay": 0.1},         # Submits tasks rapidly
+        "user_request": {"count": 5, "delay": 0.8},        # Less frequent
+        "background_job": {"count": 8, "delay": 0.5}       # Medium frequency
+    }
 
-            # Simulate varying submission rates
-            if client_id == 0:
-                # Client 0 tries to submit tasks very quickly
-                time.sleep(0.1)
-            else:
-                # Other clients submit less frequently
-                time.sleep(random.uniform(0.5, 1.0))
+    # Submit tasks in a realistic pattern (interleaved)
+    for i in range(max(p["count"] for p in processes.values())):
+        for process_type, config in processes.items():
+            # Only submit if this process still has tasks in this round
+            if i < config["count"]:
+                # Use the process type as the LRU key
+                process_data.lru_delay(
+                    process_type, 
+                    f"Task {i} from {process_type}"
+                )
+                
+                # Simulate different submission rates
+                time.sleep(config["delay"])
+                
+                # Without Celery Ranch, the bulk_batch would monopolize 
+                # the worker due to its rapid submission rate
 
 
 if __name__ == "__main__":
-    print("Simulating multiple clients submitting tasks...")
-    simulate_clients()
-    print("Tasks submitted. Check worker logs to see task execution.")
+    print("Simulating competing processes submitting tasks...")
+    print("Notice how Celery Ranch ensures fair scheduling despite different submission rates.")
+    print("-" * 70)
+    simulate_competing_processes()
+    print("-" * 70)
+    print("Tasks submitted. Check worker logs to see how tasks are fairly distributed.")
+    print("Without Celery Ranch, bulk_batch tasks would dominate, starving other processes.")
