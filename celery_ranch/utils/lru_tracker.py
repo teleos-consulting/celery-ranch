@@ -142,9 +142,7 @@ class LRUTracker:
             else:
                 # Create new metadata with custom data
                 metadata = LRUKeyMetadata(
-                    timestamp=time.time(),
-                    weight=1.0,
-                    custom_data={key: value}
+                    timestamp=time.time(), weight=1.0, custom_data={key: value}
                 )
 
             # Store updated metadata
@@ -163,8 +161,7 @@ class LRUTracker:
         return metadata.custom_data if metadata else None
 
     def set_weight_function(
-            self,
-            weight_function: Optional[Callable[[str, LRUKeyMetadata], float]]
+        self, weight_function: Optional[Callable[[str, LRUKeyMetadata], float]]
     ) -> None:
         """Set a custom dynamic weight function.
 

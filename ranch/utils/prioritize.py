@@ -5,10 +5,8 @@ from typing import Any, Callable, Dict, Optional
 
 from celery import current_app, shared_task
 
-from celery_ranch.utils.lru_tracker import LRUKeyMetadata
-
 from celery_ranch.utils.backlog import TaskBacklog
-from celery_ranch.utils.lru_tracker import LRUTracker
+from celery_ranch.utils.lru_tracker import LRUKeyMetadata, LRUTracker
 from celery_ranch.utils.persistence import (
     InMemoryStorage,
     RedisStorage,

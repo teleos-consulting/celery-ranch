@@ -240,7 +240,7 @@ def lru_task(
     app: Celery,
     config: Optional[Dict[str, Any]] = None,
     weight_function: Optional[Callable[[str, LRUKeyMetadata], float]] = None,
-    **options: Any
+    **options: Any,
 ) -> Callable[[F], F]:
     """Decorator to create an LRU-aware task.
 
