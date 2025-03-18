@@ -85,8 +85,6 @@ class LRUTask(Task):
         if _lru_tracker is None:
             configure(app=self._app)
 
-        from celery_ranch.utils.prioritize import _lru_tracker
-
         if _lru_tracker is not None:
             try:
                 _lru_tracker.set_weight(lru_key, weight)
@@ -113,8 +111,6 @@ class LRUTask(Task):
 
         if _lru_tracker is None:
             configure(app=self._app)
-
-        from celery_ranch.utils.prioritize import _lru_tracker
 
         if _lru_tracker is not None:
             try:
@@ -143,8 +139,6 @@ class LRUTask(Task):
         if _lru_tracker is None:
             configure(app=self._app)
 
-        from celery_ranch.utils.prioritize import _lru_tracker
-
         if _lru_tracker is not None:
             try:
                 _lru_tracker.set_custom_data(lru_key, key, value)
@@ -168,8 +162,6 @@ class LRUTask(Task):
         if _lru_tracker is None:
             configure(app=self._app)
 
-        from celery_ranch.utils.prioritize import _lru_tracker
-
         if _lru_tracker is not None:
             try:
                 return _lru_tracker.get_custom_data(lru_key) or {}
@@ -190,8 +182,6 @@ class LRUTask(Task):
 
         if _lru_tracker is None or _task_backlog is None:
             configure(app=self._app)
-
-        from celery_ranch.utils.prioritize import _lru_tracker, _task_backlog
 
         result = {
             "lru_key": lru_key,
@@ -232,8 +222,6 @@ class LRUTask(Task):
 
         if _lru_tracker is None:
             configure(app=self._app)
-
-        from celery_ranch.utils.prioritize import _lru_tracker
 
         if _lru_tracker is not None:
             return _lru_tracker.get_keys_by_tag(tag_name, tag_value)
