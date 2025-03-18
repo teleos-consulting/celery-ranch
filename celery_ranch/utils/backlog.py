@@ -162,6 +162,7 @@ class TaskBacklog:
                     result[task_id] = task_data
                 else:
                     # Task data missing but in index, mark for cleanup
+                    logger.info(f"Task {task_id} in LRU index for {lru_key} is missing data, removing")
                     expired_tasks.append(task_id)
 
             # Clean up expired tasks
