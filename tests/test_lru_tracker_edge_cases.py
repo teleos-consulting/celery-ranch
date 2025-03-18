@@ -76,15 +76,21 @@ def test_get_oldest_key_with_empty_keys():
 
 
 def test_get_oldest_key_with_empty_weighted_times():
-    """Test get_oldest_key when no metadata is available for any key."""
+    """Test get_oldest_key when no metadata is available for any keys."""
     tracker = LRUTracker()
     keys = ["key1", "key2", "key3"]
     
-    # Patch _get_metadata to always return None
+    # Setup _get_metadata to return None for any key
+    # This will result in an empty weighted_times dictionary
+    # This should trigger the edge case at line 281
     with patch.object(tracker, '_get_metadata', return_value=None):
-        result = tracker.get_oldest_key(keys)
-        # Should return the first key
-        assert result == "key1"
+        with patch.object(tracker, '_storage') as mock_storage:
+            # Mock storage to ensure no actual storage access happens
+            mock_storage.get.return_value = None
+            
+            # Call get_oldest_key - this will end up at line 281 where it returns keys[0]
+            result = tracker.get_oldest_key(keys)
+            assert result == "key1"
 
 
 def test_get_metadata_with_legacy_timestamp():

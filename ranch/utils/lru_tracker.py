@@ -1,3 +1,4 @@
+import heapq
 import logging
 import threading
 import time
@@ -231,6 +232,9 @@ class LRUTracker:
         If a custom weight function is set, it will be used to calculate
         priority for each key.
 
+        Optimized implementation using a heap priority queue for better
+        performance with large numbers of keys.
+
         Args:
             keys: List of LRU keys to compare
 
@@ -241,18 +245,18 @@ class LRUTracker:
             return None
 
         with self._lock:
-            # Get weighted timestamps for all keys
+            # Use a priority queue for better performance with large lists
+            priority_queue: List[Tuple[float, float, str]] = []
             now = time.time()
-            weighted_times: Dict[str, Tuple[float, float]] = {}
 
+            # Build the priority queue with O(n) complexity
             for key in keys:
                 metadata = self._get_metadata(key)
 
                 if metadata:
-                    # If there's a custom weight function, use it
-                    if self._weight_function:
-                        try:
-                            # Use the custom function to get the effective weight
+                    # Calculate effective weight - either custom or static
+                    try:
+                        if self._weight_function:
                             effective_weight = self._weight_function(key, metadata)
                             if effective_weight <= 0:
                                 logger.warning(
@@ -260,30 +264,33 @@ class LRUTracker:
                                     f"using default weight for {key}"
                                 )
                                 effective_weight = metadata.weight
-                        except Exception as e:
-                            logger.error(f"Error in weight function for key {key}: {e}")
-                            # Fall back to static weight on error
+                        else:
                             effective_weight = metadata.weight
-                    else:
-                        # Use the static weight from metadata
+                    except Exception as e:
+                        logger.error(f"Error in weight function for key {key}: {e}")
                         effective_weight = metadata.weight
-                    # Calculate weighted time: actual_time * effective_weight
-                    weighted_time = (now - metadata.timestamp) * effective_weight
-                    weighted_times[key] = (weighted_time, metadata.timestamp)
-                else:
-                    # Use default weight if no metadata
-                    weighted_times[key] = (now, now)
 
-            # If no keys are tracked yet, return the first one from the input
-            if not weighted_times:
+                    # Calculate weighted time: actual_time * effective_weight
+                    elapsed_time = now - metadata.timestamp
+                    weighted_time = elapsed_time * effective_weight
+
+                    # Use negative values because heapq is a min-heap but we want max
+                    # Priority: (negative weighted_time, negative timestamp, key)
+                    # This ensures highest weighted_time is first, with timestamp as tiebreaker
+                    priority = (-weighted_time, -metadata.timestamp, key)
+                else:
+                    # Default priority for keys without metadata
+                    priority = (0, -now, key)
+
+                heapq.heappush(priority_queue, priority)
+
+            # If no keys are tracked, return the first one from the input
+            if not priority_queue:
                 return keys[0]
 
-            # Return the key with the highest weighted time (most overdue by weight)
-            # In case of a tie, use the oldest actual timestamp
-            return max(
-                weighted_times.keys(),
-                key=lambda k: (weighted_times[k][0], weighted_times[k][1]),
-            )
+            # Get the highest priority key (min-heap with negated values = max)
+            _, _, oldest_key = heapq.heappop(priority_queue)
+            return oldest_key
 
     def get_keys_by_tag(
         self, tag_name: str, tag_value: Optional[str] = None

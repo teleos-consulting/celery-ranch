@@ -124,9 +124,68 @@ class TaskBacklog:
                     else:
                         self._storage.delete(lru_index_key)
 
-                # Remove the task data and metadata
-                self._storage.delete(f"{self._task_prefix}{task_id}")
-                self._storage.delete(f"{self._metadata_prefix}{task_id}")
+                # Remove the task data and metadata using batch delete
+                keys_to_delete = [
+                    f"{self._task_prefix}{task_id}",
+                    f"{self._metadata_prefix}{task_id}",
+                ]
+                self._storage.batch_delete(keys_to_delete)
+
+    def remove_tasks(self, task_ids: List[str]) -> None:
+        """Remove multiple tasks from the backlog efficiently.
+
+        Uses batch operations for better performance.
+
+        Args:
+            task_ids: List of task IDs to remove
+        """
+        if not task_ids:
+            return
+
+        with self._lock:
+            # Group tasks by LRU key
+            task_keys = [f"{self._task_prefix}{task_id}" for task_id in task_ids]
+            task_data_dict = self._storage.batch_get(task_keys)
+
+            # Map tasks to their LRU keys
+            lru_key_mapping: Dict[str, List[str]] = (
+                {}
+            )  # Maps LRU keys to lists of task IDs
+
+            for task_id in task_ids:
+                task_key = f"{self._task_prefix}{task_id}"
+                task_data = task_data_dict.get(task_key)
+
+                if task_data:
+                    _, lru_key, _, _ = task_data
+                    if lru_key not in lru_key_mapping:
+                        lru_key_mapping[lru_key] = []
+                    lru_key_mapping[lru_key].append(task_id)
+
+            # Update each LRU index
+            for lru_key, ids in lru_key_mapping.items():
+                lru_index_key = f"{self._lru_index_prefix}{lru_key}"
+                lru_tasks = self._storage.get(lru_index_key) or {}
+
+                # Remove tasks from the index
+                for task_id in ids:
+                    if task_id in lru_tasks:
+                        del lru_tasks[task_id]
+
+                # Update or delete the LRU index
+                if lru_tasks:
+                    self._storage.set(lru_index_key, lru_tasks)
+                else:
+                    self._storage.delete(lru_index_key)
+
+            # Batch delete all task data and metadata
+            all_task_keys = [f"{self._task_prefix}{task_id}" for task_id in task_ids]
+            all_meta_keys = [
+                f"{self._metadata_prefix}{task_id}" for task_id in task_ids
+            ]
+
+            self._storage.batch_delete(all_task_keys)
+            self._storage.batch_delete(all_meta_keys)
 
     def get_tasks_by_lru_key(
         self, lru_key: str
@@ -147,27 +206,77 @@ class TaskBacklog:
             lru_index_key = f"{self._lru_index_prefix}{lru_key}"
             lru_tasks = self._storage.get(lru_index_key) or {}
 
-            # Get the task data for each task ID
-            for task_id in lru_tasks:
+            if not lru_tasks:
+                return {}
+
+            task_ids = list(lru_tasks.keys())
+            now = time.time()
+
+            # Batch get all metadata in one operation
+            metadata_keys = [
+                f"{self._metadata_prefix}{task_id}" for task_id in task_ids
+            ]
+            metadata_dict = self._storage.batch_get(metadata_keys)
+
+            # Identify non-expired task IDs
+            valid_task_ids = []
+            for task_id in task_ids:
+                metadata_key = f"{self._metadata_prefix}{task_id}"
+                metadata = metadata_dict.get(metadata_key)
+
                 # Check if task has expired
-                metadata = self._storage.get(f"{self._metadata_prefix}{task_id}")
-                if metadata and metadata.get("expires_at"):
-                    if time.time() > metadata["expires_at"]:
-                        # Task has expired
-                        expired_tasks.append(task_id)
-                        continue
-
-                task_data = self._storage.get(f"{self._task_prefix}{task_id}")
-                if task_data:
-                    result[task_id] = task_data
-                else:
-                    # Task data missing but in index, mark for cleanup
+                if (
+                    metadata
+                    and metadata.get("expires_at")
+                    and now > metadata["expires_at"]
+                ):
+                    # Task has expired
                     expired_tasks.append(task_id)
+                else:
+                    valid_task_ids.append(task_id)
 
-            # Clean up expired tasks
+            # Batch get all non-expired task data in one operation
+            if valid_task_ids:
+                task_keys = [
+                    f"{self._task_prefix}{task_id}" for task_id in valid_task_ids
+                ]
+                task_data_dict = self._storage.batch_get(task_keys)
+
+                # Process task data
+                for task_id, task_key in zip(valid_task_ids, task_keys):
+                    task_data = task_data_dict.get(task_key)
+                    if task_data:
+                        result[task_id] = task_data
+                    else:
+                        # Task data missing but in index, mark for cleanup
+                        task_id_short = task_id[:8]  # Use shorter ID in logs
+                        logger.info(
+                            f"Task {task_id_short}... for {lru_key} missing data, marking for cleanup"
+                        )
+                        expired_tasks.append(task_id)
+
+            # Clean up expired tasks in batch if any
             if expired_tasks:
-                for task_id in expired_tasks:
-                    self.remove_task(task_id)
+                # First update the LRU index
+                updated_lru_tasks = {
+                    k: v for k, v in lru_tasks.items() if k not in expired_tasks
+                }
+
+                if updated_lru_tasks:
+                    self._storage.set(lru_index_key, updated_lru_tasks)
+                else:
+                    self._storage.delete(lru_index_key)
+
+                # Batch delete expired task data and metadata
+                task_keys = [
+                    f"{self._task_prefix}{task_id}" for task_id in expired_tasks
+                ]
+                meta_keys = [
+                    f"{self._metadata_prefix}{task_id}" for task_id in expired_tasks
+                ]
+
+                self._storage.batch_delete(task_keys)
+                self._storage.batch_delete(meta_keys)
 
         return result
 
@@ -200,6 +309,8 @@ class TaskBacklog:
     def get_backlog_stats(self) -> Dict[str, Any]:
         """Get statistics about the backlog.
 
+        Uses batch operations for improved performance.
+
         Returns:
             Dictionary with backlog statistics
         """
@@ -215,31 +326,41 @@ class TaskBacklog:
             lru_keys = self.get_all_lru_keys()
             stats["total_clients"] = len(lru_keys)
 
-            # Process each LRU key
-            for lru_key in lru_keys:
-                # Get tasks for this key
-                tasks = self.get_tasks_by_lru_key(lru_key)
-                task_count = len(tasks)
-                if isinstance(stats["total_tasks"], int):
-                    stats["total_tasks"] += task_count
+            # Batch get all LRU indices
+            lru_index_keys = [
+                f"{self._lru_index_prefix}{lru_key}" for lru_key in lru_keys
+            ]
+            lru_indices_dict = self._storage.batch_get(lru_index_keys)
 
-                # Add client info
-                if isinstance(stats["clients"], dict):
-                    stats["clients"][lru_key] = {"task_count": task_count}
+            # Calculate task counts by client
+            client_task_counts = {}
+            for i, lru_key in enumerate(lru_keys):
+                lru_index_key = lru_index_keys[i]
+                lru_tasks = lru_indices_dict.get(lru_index_key) or {}
+                task_count = len(lru_tasks)
 
-            # Get expired tasks count by checking metadata
+                client_task_counts[lru_key] = task_count
+                stats["total_tasks"] += task_count
+                stats["clients"][lru_key] = {"task_count": task_count}
+
+            # Get expired tasks count efficiently using batch operations
             now = time.time()
             meta_keys = self._storage.get_keys_by_prefix(self._metadata_prefix)
-            for meta_key in meta_keys:
-                metadata = self._storage.get(meta_key)
-                if (
-                    metadata
-                    and isinstance(metadata, dict)
-                    and "expires_at" in metadata
-                    and metadata["expires_at"] is not None
-                    and now > metadata["expires_at"]
-                ):
-                    if isinstance(stats["expired_tasks"], int):
+
+            if meta_keys:
+                # Batch get all metadata
+                metadata_dict = self._storage.batch_get(meta_keys)
+
+                # Count expired tasks
+                for meta_key in meta_keys:
+                    metadata = metadata_dict.get(meta_key)
+                    if (
+                        metadata
+                        and isinstance(metadata, dict)
+                        and "expires_at" in metadata
+                        and metadata["expires_at"] is not None
+                        and now > metadata["expires_at"]
+                    ):
                         stats["expired_tasks"] += 1
 
         return stats
@@ -247,20 +368,32 @@ class TaskBacklog:
     def cleanup_expired_tasks(self) -> int:
         """Remove expired tasks from the backlog.
 
+        Uses batch operations for improved performance.
+
         Returns:
             Number of tasks removed
         """
         removed_count = 0
         now = time.time()
         expired_tasks = []
+        client_task_mapping: Dict[str, List[str]] = (
+            {}
+        )  # Maps lru_keys to lists of task_ids
 
         with self._lock:
             # Find all expired tasks
             meta_keys = self._storage.get_keys_by_prefix(self._metadata_prefix)
+
+            if not meta_keys:
+                return 0
+
+            # Batch get all metadata
+            metadata_dict = self._storage.batch_get(meta_keys)
             prefix_len = len(self._metadata_prefix)
 
+            # Identify expired tasks
             for meta_key in meta_keys:
-                metadata = self._storage.get(meta_key)
+                metadata = metadata_dict.get(meta_key)
                 if (
                     metadata
                     and metadata.get("expires_at")
@@ -269,10 +402,46 @@ class TaskBacklog:
                     task_id = meta_key[prefix_len:]
                     expired_tasks.append(task_id)
 
-            # Remove expired tasks
-            for task_id in expired_tasks:
-                self.remove_task(task_id)
-                removed_count += 1
+            if not expired_tasks:
+                return 0
 
-        logger.info(f"Cleaned up {removed_count} expired tasks")
+            removed_count = len(expired_tasks)
+
+            # Group tasks by client for efficient LRU index updates
+            task_keys = [f"{self._task_prefix}{task_id}" for task_id in expired_tasks]
+            task_data_dict = self._storage.batch_get(task_keys)
+
+            for task_id, task_key in zip(expired_tasks, task_keys):
+                task_data = task_data_dict.get(task_key)
+                if task_data:
+                    _, lru_key, _, _ = task_data
+                    if lru_key not in client_task_mapping:
+                        client_task_mapping[lru_key] = []
+                    client_task_mapping[lru_key].append(task_id)
+
+            # Update LRU indices efficiently by client
+            for lru_key, client_tasks in client_task_mapping.items():
+                lru_index_key = f"{self._lru_index_prefix}{lru_key}"
+                lru_tasks = self._storage.get(lru_index_key) or {}
+
+                # Remove expired tasks from the LRU index
+                updated_lru_tasks = {
+                    k: v for k, v in lru_tasks.items() if k not in client_tasks
+                }
+
+                if updated_lru_tasks:
+                    self._storage.set(lru_index_key, updated_lru_tasks)
+                else:
+                    self._storage.delete(lru_index_key)
+
+            # Batch delete task data and metadata
+            task_keys = [f"{self._task_prefix}{task_id}" for task_id in expired_tasks]
+            meta_keys = [
+                f"{self._metadata_prefix}{task_id}" for task_id in expired_tasks
+            ]
+
+            self._storage.batch_delete(task_keys)
+            self._storage.batch_delete(meta_keys)
+
+        logger.info(f"Cleaned up {removed_count} expired tasks using batch operations")
         return removed_count
