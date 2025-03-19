@@ -6,7 +6,7 @@
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/release/python-380/)
 [![Celery 5.3.4+](https://img.shields.io/badge/celery-5.3.4+-green.svg)](https://docs.celeryproject.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Sponsor on GitHub](https://img.shields.io/badge/sponsor-on%20github-blue?logo=github&style=flat-square)](https://github.com/sponsors/teleos-consulting)
+[![Sponsor on GitHub](https://img.shields.io/badge/sponsor-on%20github-blue?logo=github)](https://github.com/sponsors/teleos-consulting)
 
 A Python extension library for Celery that provides fair task scheduling using LRU (Least Recently Used) prioritization. Designed to prevent high-volume bulk processes from monopolizing resources while ensuring fair access for all task sources - whether they're from bulk operations, user interactions, scheduled jobs, or critical on-demand processes.
 
