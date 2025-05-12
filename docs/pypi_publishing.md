@@ -4,78 +4,71 @@ This document provides instructions for publishing the Ranch package to the Pyth
 
 ## Installation from GitHub
 
-While PyPI registrations are temporarily unavailable, you can install the package directly from GitHub using pip:
+You can install the package directly from GitHub using pip:
 
 ```bash
 # Install the latest version
 pip install git+https://github.com/teleos-consulting/celery-ranch.git
 
 # Install a specific version by tag
-pip install git+https://github.com/teleos-consulting/celery-ranch.git@v0.1.0
+pip install git+https://github.com/teleos-consulting/celery-ranch.git@v0.1.1
 
 # Install with Redis support
 pip install "git+https://github.com/teleos-consulting/celery-ranch.git#egg=celery-ranch[redis]"
 ```
 
-## Prerequisites for PyPI Publishing
+## Installation from PyPI
 
-1. You need an account on [PyPI](https://pypi.org/) and/or [TestPyPI](https://test.pypi.org/)
-2. Generate API tokens from your PyPI/TestPyPI account settings
-
-## Setup
-
-1. Configure authentication by creating a `.pypirc` file in your home directory:
-
-```
-[distutils]
-index-servers =
-    pypi
-    testpypi
-
-[pypi]
-username = __token__
-password = your-pypi-token
-
-[testpypi]
-repository = https://test.pypi.org/legacy/
-username = __token__
-password = your-testpypi-token
-```
-
-Alternatively, you can use environment variables:
+Once published to PyPI, you can install the package with:
 
 ```bash
-export TWINE_USERNAME=__token__
-export TWINE_PASSWORD=your-pypi-token
+# Install the basic package
+pip install celery-ranch
+
+# Install with Redis support
+pip install celery-ranch[redis]
 ```
 
-## Publishing Process
+## Publishing to PyPI via GitHub Actions
 
-We've created a script to handle the publishing workflow. The script:
+The package is configured to publish to PyPI automatically using GitHub Actions with OpenID Connect authentication. This method is secure and doesn't require storing API tokens as GitHub secrets.
 
-1. Runs tests
-2. Runs linters and type checking
-3. Builds package distributions
-4. Verifies package quality with Twine
-5. Uploads to PyPI or TestPyPI
+### Setup Requirements
 
-### Commands
+1. A repository environment called `pypi` must be configured in your GitHub repository settings.
+2. PyPI must be configured to trust GitHub Actions as an OpenID Connect provider.
 
-To publish to TestPyPI:
+### Publishing Process
 
-```bash
-./scripts/publish.sh --test
-```
+There are two ways to trigger the publishing workflow:
 
-To publish to PyPI:
+1. **Creating a GitHub Release** (Recommended)
+   - Create a new release in GitHub with a tag that matches the version in the code (e.g., `v0.1.1`)
+   - The workflow will automatically build and publish the package
 
-```bash
-./scripts/publish.sh
-```
+2. **Manual Workflow Trigger**
+   - Go to the Actions tab in GitHub
+   - Select the "Build and Publish Python Package" workflow
+   - Click "Run workflow"
+   - Enter the version (must match the version in the code)
 
-### Manual Publishing
+### Versioning Scheme
 
-If you prefer to publish manually:
+We follow semantic versioning:
+- MAJOR version for incompatible API changes
+- MINOR version for backward-compatible functionality additions
+- PATCH version for backward-compatible bug fixes
+
+The package version is defined in both:
+- `ranch/__init__.py` (`__version__` variable)
+- `celery_ranch/__init__.py` (`__version__` variable) 
+- `pyproject.toml` (`version` field)
+
+When releasing a new version, make sure to update all three locations.
+
+## Manual Publishing (Alternative Method)
+
+If you need to publish manually (not recommended):
 
 ```bash
 # Activate your virtual environment
@@ -94,29 +87,23 @@ twine upload --repository testpypi dist/*
 twine upload dist/*
 ```
 
-## Version Management
-
-The package version is defined in both:
-- `ranch/__init__.py` (`__version__` variable)
-- `pyproject.toml` (`version` field)
-
-When releasing a new version, make sure to update both locations.
-
-## Versioning Scheme
-
-We follow semantic versioning:
-- MAJOR version for incompatible API changes
-- MINOR version for backward-compatible functionality additions
-- PATCH version for backward-compatible bug fixes
-
 ## After Publishing
 
 After successfully publishing, verify the package can be installed:
 
 ```bash
 # From TestPyPI
-pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ ranch
+pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ celery-ranch
 
 # From PyPI
-pip install ranch
+pip install celery-ranch
 ```
+
+## Troubleshooting
+
+If the GitHub Actions workflow fails:
+
+1. Check that all version numbers match in the three required locations
+2. Verify that the PyPI environment is properly configured
+3. Ensure tests and linting pass locally before pushing
+4. Check for any rate limiting or permission issues with PyPI
