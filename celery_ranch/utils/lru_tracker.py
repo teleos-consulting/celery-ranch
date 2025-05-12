@@ -273,14 +273,14 @@ class LRUTracker:
 
                     # Calculate weighted time: actual_time * effective_weight
                     elapsed_time = now - metadata.timestamp
-                    # Lower weight = higher priority, so divide by weight to get priority value
+                    # Lower weight = higher priority, so divide by weight for priority
                     # This matches the original algorithm's max() usage where higher
                     # weighted_time values have higher priority
                     priority_value = elapsed_time / effective_weight
 
                     # Use negative values because heapq is a min-heap but we want max
                     # Priority: (negative priority_value, negative timestamp, key)
-                    # This ensures highest priority_value is first, with timestamp as tiebreaker
+                    # Ensures highest priority_value first, with timestamp as tiebreaker
                     priority = (-priority_value, -metadata.timestamp, key)
                 else:
                     # Default priority for keys without metadata
