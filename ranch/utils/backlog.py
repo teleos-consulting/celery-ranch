@@ -251,7 +251,8 @@ class TaskBacklog:
                         # Task data missing but in index, mark for cleanup
                         task_id_short = task_id[:8]  # Use shorter ID in logs
                         logger.info(
-                            f"Task {task_id_short}... for {lru_key} missing data, marking for cleanup"
+                            f"Task {task_id_short}... for {lru_key} missing data, "
+                            f"marking for cleanup"
                         )
                         expired_tasks.append(task_id)
 

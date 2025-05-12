@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "celery-ranch"
-version = "0.1.0"
+version = "0.1.1"
 description = "Celery Ranch: A Celery extension providing LRU-based task prioritization"
 readme = "README.md"
 authors = [

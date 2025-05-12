@@ -276,7 +276,7 @@ class LRUTracker:
 
                     # Use negative values because heapq is a min-heap but we want max
                     # Priority: (negative weighted_time, negative timestamp, key)
-                    # This ensures highest weighted_time is first, with timestamp as tiebreaker
+                    # Ensures highest weighted_time first, timestamp as tiebreaker
                     priority = (-weighted_time, -metadata.timestamp, key)
                 else:
                     # Default priority for keys without metadata
