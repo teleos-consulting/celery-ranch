@@ -13,7 +13,7 @@ A Python extension library for Celery that provides fair task scheduling using L
 ## Installation
 
 ```bash
-# Install from PyPI (currently unavailable)
+# Install from PyPI
 pip install celery-ranch
 
 # Install directly from GitHub
